@@ -1,0 +1,35 @@
+dataset_name,file_name,rows,columns,missing_percentage,quality_score,date_columns,numeric_columns,outliers,recommendations
+annual_gdp,Annual GDP.csv,25,6,0.0,1.0,4,3,0,
+central_bank_rate_cbr__,Central Bank Rate (CBR)  .csv,117,4,16.025641025641026,0.5397435897435898,2,1,0,Significant duplicate rows detected
+central_bank_rates_,Central Bank Rates ().csv,301,11,14.497130776200542,0.8500453035336757,2,8,12,
+cheques__efts,Cheques  EFTs.csv,212,7,28.167115902964962,0.7136118598382748,4,2,0,
+commercial_banks_weighted_average_rates_,Commercial Banks Weighted Average Rates ().csv,408,7,0.0,0.9950980392156863,2,4,0,
+daily_kes_interbank_activity_report,Daily KES Interbank Activity Report.csv,2713,5,12.171028381865094,0.5782897161813492,2,1,0,Significant duplicate rows detected
+diaspora_remittances,Diaspora Remittances.csv,258,8,0.0,1.0,7,4,0,
+discount_window,Discount Window.csv,100,4,17.0,0.53,2,1,0,Significant duplicate rows detected
+domestic_debt_by_instrument,Domestic Debt by Instrument.csv,309,10,1.3592233009708738,0.985945446139621,8,7,1,
+domestic_foreign_currency_cheques,Domestic Foreign Currency Cheque(s).csv,163,9,0.0,1.0,2,6,0,
+foreign_trade_summary_ksh_million,Foreign Trade Summary (Ksh Million).csv,315,10,0.0,0.9977324263038548,9,7,5,
+government_securities_auction_and_maturities_schedule,Government Securities Auction and Maturities Schedule.csv,15,3,0.0,0.7,2,0,0,Significant duplicate rows detected
+horizontal_repo_market,Horizontal Repo Market.csv,268,6,10.883084577114428,0.7605721393034827,2,3,6,Significant duplicate rows detected
+interbank_rates__volumes,Interbank Rates  Volumes.csv,3224,8,0.0,0.9924317617866005,2,5,97,
+interbank_rates__,Interbank Rates () .csv,4821,4,15.230242688238954,0.5476975731176104,3,0,0,Significant duplicate rows detected
+issues_of_treasury_bills,Issues of Treasury Bills.csv,775,7,56.70046082949308,0.1329953917050692,4,1,0,High missing data rate - consider imputation strategies; Significant duplicate rows detected
+issues_of_treasury_bonds,Issues of Treasury Bonds.csv,820,8,47.4390243902439,0.22378048780487808,5,2,3,High missing data rate - consider imputation strategies; Significant duplicate rows detected
+kepssrtgs,KEPSSRTGS.csv,230,5,0.0,0.9956521739130435,4,1,0,
+mobile_payments,Mobile Payments.csv,216,7,0.0,1.0,3,3,0,
+monthly_exchange_rate_end_period,Monthly exchange rate (end period).csv,390,32,28.61378205128205,0.7135969274977897,2,29,3,
+monthly_exchange_rate_period_average,Monthly Exchange rate (period average).csv,390,32,28.533653846153843,0.7145750442086649,2,29,1,
+"number_of_atms,_atm_cards,__pos_machines","Number of ATMs, ATM Cards,  POS Machines.csv",188,11,0.0,0.9973404255319149,8,2,1,
+number_of_transactions,Number of Transactions.csv,188,9,0.0,0.9893617021276596,7,1,2,
+"principal_exports_volume,_value_and_unit_prices_ksh_million","Principal Exports Volume, Value and Unit Prices (Ksh Million).csv",317,12,0.0,1.0,11,0,0,
+public_debt,Public Debt.csv,302,7,0.0,1.0,5,4,0,
+repo_and_reverse_repo_,Repo and Reverse Repo .csv,67220,5,19.663790538530197,0.49098482594465925,2,2,1664,Significant duplicate rows detected
+revenue_and_expenditure,Revenue and Expenditure.csv,302,24,5.311810154525387,0.9446743929359823,22,21,14,
+trade_weighted_average_indicative_rates,TRADE WEIGHTED AVERAGE INDICATIVE RATES.csv,7917,5,12.095490716180372,0.5790450928381963,3,0,0,Significant duplicate rows detected
+value_of_direct_imports_from_selected_rest_of_world_countries__kshs._millions,Value of Direct Imports from Selected Rest of World Countries  (Kshs. Millions).csv,324,15,0.0,0.9969135802469136,14,0,0,
+value_of_exports_to_selected_african_countries_ksh_million,Value of Exports to Selected African Countries (Ksh Million).csv,324,15,0.0,0.992798353909465,11,3,7,
+value_of_exports_to_selected_rest_of_world_countries_ksh_million,Value of Exports to Selected Rest of World Countries (Ksh Million).csv,324,15,0.0,1.0,14,0,0,
+value_of_selected_domestic_exports_ksh_million,Value of Selected Domestic Exports (Ksh Million).csv,317,12,0.0,1.0,11,0,0,
+value_of_transactions_kshs._millions,Value of Transactions (Kshs. Millions).csv,188,9,0.0,0.9929078014184397,5,3,4,
+value_of_direct_imports_from_selected_african_countries_ksh._million,Value of Direct Imports from Selected African Countries (Ksh. Million).xlsx,324,11,0.0,0.9907407407407407,8,2,6,
