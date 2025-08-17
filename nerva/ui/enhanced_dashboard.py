@@ -34,13 +34,13 @@ except ImportError:
     from models.baseline import BaselineForecaster, train_baseline_forecaster
     from models.advanced import AdvancedForecaster, train_advanced_forecaster
 
-# Enhanced page configuration
-st.set_page_config(
-    page_title="NERVA | CBK Intelligence",
-    page_icon="🎯",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Enhanced page configuration (handled by launcher when imported)
+# st.set_page_config(
+#     page_title="NERVA | CBK Intelligence",
+#     page_icon="🎯",
+#     layout="wide",
+#     initial_sidebar_state="expanded"
+# )
 
 # Custom CSS with FontAwesome and professional styling
 st.markdown("""
@@ -758,7 +758,7 @@ class EnhancedNERVADashboard:
     def render_advanced_forecasting_panel(self, controls):
         """Enhanced forecasting panel with advanced models"""
         
-        st.markdown("## <i class="fas fa-crystal-ball"></i> Advanced Forecasting Engine", unsafe_allow_html=True)
+        st.markdown('## <i class="fas fa-crystal-ball"></i> Advanced Forecasting Engine', unsafe_allow_html=True)
         
         if not controls['selected_dataset'] or not controls['target_variable']:
             st.markdown("""
@@ -792,7 +792,7 @@ class EnhancedNERVADashboard:
         col1, col2 = st.columns([3, 1])
         
         with col1:
-            st.markdown("### <i class="fas fa-cogs"></i> Model Training", unsafe_allow_html=True)
+            st.markdown('### <i class="fas fa-cogs"></i> Model Training', unsafe_allow_html=True)
         
         with col2:
             if st.button("🚀 Train Models", type="primary"):
@@ -840,7 +840,7 @@ class EnhancedNERVADashboard:
     def display_model_results(self, forecaster, target_var, controls):
         """Display comprehensive model results"""
         
-        st.markdown("### <i class="fas fa-chart-area"></i> Model Performance", unsafe_allow_html=True)
+        st.markdown('### <i class="fas fa-chart-area"></i> Model Performance', unsafe_allow_html=True)
         
         # Performance metrics
         performance_df = forecaster.get_model_performance()
@@ -887,7 +887,7 @@ class EnhancedNERVADashboard:
     
     def render_network_analysis_panel(self):
         """Network analysis panel placeholder"""
-        st.markdown("## <i class="fas fa-project-diagram"></i> Network Analysis", unsafe_allow_html=True)
+        st.markdown('## <i class="fas fa-project-diagram"></i> Network Analysis', unsafe_allow_html=True)
         st.markdown("""
         <div class="alert-info">
             <i class="fas fa-construction"></i> <strong>Coming in Sprint 2:</strong>
@@ -902,7 +902,7 @@ class EnhancedNERVADashboard:
     
     def render_market_intelligence_panel(self):
         """Market intelligence panel"""
-        st.markdown("## <i class="fas fa-chart-line"></i> Market Intelligence", unsafe_allow_html=True)
+        st.markdown('## <i class="fas fa-chart-line"></i> Market Intelligence', unsafe_allow_html=True)
         st.markdown("""
         <div class="alert-info">
             <i class="fas fa-tools"></i> <strong>In Development:</strong>
@@ -917,7 +917,7 @@ class EnhancedNERVADashboard:
     
     def render_policy_intelligence_panel(self):
         """Policy intelligence panel"""
-        st.markdown("## <i class="fas fa-file-contract"></i> Policy Intelligence", unsafe_allow_html=True)
+        st.markdown('## <i class="fas fa-file-contract"></i> Policy Intelligence', unsafe_allow_html=True)
         st.markdown("""
         <div class="alert-info">
             <i class="fas fa-robot"></i> <strong>AI-Powered Features:</strong>

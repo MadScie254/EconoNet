@@ -15,6 +15,14 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 
+# Page Configuration (MUST be first Streamlit command)
+st.set_page_config(
+    page_title="NERVA: National Economic & Risk Visual Analytics",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Add NERVA to path
 sys.path.append(str(Path(__file__).parent / "nerva"))
 
@@ -122,14 +130,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Page Configuration
-st.set_page_config(
-    page_title="NERVA: National Economic & Risk Visual Analytics",
-    page_icon="🧠",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state
 if 'datasets_loaded' not in st.session_state:
