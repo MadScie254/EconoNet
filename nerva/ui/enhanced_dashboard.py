@@ -517,7 +517,7 @@ class EnhancedNERVADashboard:
             st.markdown('</div>', unsafe_allow_html=True)
             
             # Interactive data table
-            st.markdown("### <i class="fas fa-list"></i> Dataset Catalog", unsafe_allow_html=True)
+            st.markdown('### <i class="fas fa-list"></i> Dataset Catalog', unsafe_allow_html=True)
             
             # Add quality filters
             col1, col2, col3 = st.columns(3)

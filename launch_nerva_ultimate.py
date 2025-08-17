@@ -24,7 +24,7 @@ try:
     from etl.processor import CBKDataProcessor, get_data_catalog
     from etl.feature_engine import create_feature_pipeline
     from models.baseline import EnsembleForecaster
-    from models.advanced import TransformerForecaster, GARCHModel
+    from models.advanced import TransformerForecaster, AdvancedForecaster
     from models.registry import create_model_registry, create_ensemble_manager
     from data.streaming import create_data_streamer, create_quality_monitor
 except ImportError as e:

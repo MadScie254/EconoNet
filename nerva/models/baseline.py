@@ -356,3 +356,62 @@ def quick_forecast(df: pd.DataFrame, target_column: str, horizon: int = 1) -> Di
     """Quick forecast using baseline ensemble"""
     forecaster = train_baseline_forecaster(df, target_column)
     return forecaster.predict(df, horizon)
+
+class EnsembleForecaster(BaselineForecaster):
+    """
+    Enhanced ensemble forecaster with additional capabilities
+    Alias for BaselineForecaster for compatibility
+    """
+    
+    def __init__(self, target_column: str = None):
+        super().__init__(target_column)
+        self.ensemble_weights = {}
+        self.model_predictions = {}
+    
+    def fit(self, X: pd.DataFrame, y: pd.Series):
+        """Scikit-learn style fit method"""
+        # Convert to DataFrame if needed
+        if isinstance(X, np.ndarray):
+            X = pd.DataFrame(X)
+        if isinstance(y, np.ndarray):
+            y = pd.Series(y)
+        
+        # Combine X and y for training
+        combined_df = X.copy()
+        combined_df['target'] = y
+        
+        # Train ensemble
+        self.train_ensemble(combined_df, 'target')
+        return self
+    
+    def predict(self, X: pd.DataFrame, horizon: int = 1) -> np.ndarray:
+        """Scikit-learn style predict method"""
+        try:
+            # Use existing predict method
+            predictions = super().predict(X, horizon)
+            
+            # Convert to numpy array
+            if isinstance(predictions, dict):
+                # Average predictions from different models
+                pred_values = list(predictions.values())
+                if pred_values:
+                    return np.array(pred_values).mean(axis=0)
+                else:
+                    return np.array([])
+            elif isinstance(predictions, (list, tuple)):
+                return np.array(predictions)
+            else:
+                return np.array([predictions])
+                
+        except Exception as e:
+            logger.warning(f"Prediction failed: {e}")
+            # Return default prediction
+            return np.array([X.mean().mean()] * horizon)
+    
+    def get_feature_importance(self) -> Dict[str, float]:
+        """Get feature importance from ensemble"""
+        return self.feature_importance
+    
+    def get_model_weights(self) -> Dict[str, float]:
+        """Get ensemble model weights"""
+        return self.ensemble_weights
