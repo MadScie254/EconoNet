@@ -312,66 +312,108 @@ def create_system_overview():
             if st.button("🎯 Train Baseline Models"):
                 with st.spinner("Training ensemble models..."):
                     try:
-                        # Select a target variable
-                        target_dataset = 'monthly_exchange_rate_end_period'
-                        if target_dataset in datasets:
+                        # Select a target variable from available datasets
+                        available_datasets = ['monthly_exchange_rate_end_period', 'diaspora_remittances', 'public_debt']
+                        target_dataset = None
+                        
+                        for dataset_name in available_datasets:
+                            if dataset_name in datasets:
+                                target_dataset = dataset_name
+                                break
+                        
+                        if target_dataset:
                             df = datasets[target_dataset]
                             numeric_cols = df.select_dtypes(include=[np.number]).columns
                             
                             if len(numeric_cols) > 0:
-                                target_series = df[numeric_cols[0]].dropna()
+                                # Select first numeric column as target
+                                target_col = numeric_cols[0]
+                                target_series = df[target_col].dropna()
                                 
-                                # Train baseline models
-                                forecaster = EnsembleForecaster()
-                                X = pd.DataFrame({'lag_1': target_series.shift(1)}).dropna()
-                                y = target_series[1:]
-                                
-                                forecaster.fit(X, y)
-                                st.success("✅ Baseline models trained successfully!")
-                                st.session_state.models_trained = True
+                                if len(target_series) > 10:  # Ensure sufficient data
+                                    # Create simple features
+                                    X = pd.DataFrame({
+                                        'lag_1': target_series.shift(1),
+                                        'lag_2': target_series.shift(2),
+                                        'target': target_series
+                                    }).dropna()
+                                    
+                                    if len(X) > 5:
+                                        y = X['target']
+                                        X_features = X[['lag_1', 'lag_2']]
+                                        
+                                        # Train baseline models
+                                        forecaster = EnsembleForecaster()
+                                        forecaster.fit(X_features, y)
+                                        
+                                        st.success(f"✅ Baseline models trained on {target_dataset} ({target_col})!")
+                                        st.session_state.models_trained = True
+                                        st.session_state.trained_forecaster = forecaster
+                                        st.session_state.target_dataset = target_dataset
+                                        st.session_state.target_column = target_col
+                                        
+                                        # Show model performance
+                                        st.info(f"📊 Dataset: {target_dataset}\n🎯 Target: {target_col}\n📈 Data points: {len(X)}")
+                                    else:
+                                        st.warning("Not enough data points after feature creation")
+                                else:
+                                    st.warning("Insufficient data in target series")
                             else:
                                 st.warning("No numeric columns found in target dataset")
                         else:
-                            st.warning("Target dataset not available")
+                            st.warning("No suitable datasets found for training")
                     except Exception as e:
-                        st.error(f"Training failed: {e}")
+                        st.error(f"Training failed: {str(e)}")
+                        st.exception(e)
         
         with model_col2:
             if st.button("🧠 Train Advanced Models"):
                 with st.spinner("Training deep learning models..."):
                     try:
-                        # Train advanced models
-                        target_dataset = 'monthly_exchange_rate_end_period'
-                        if target_dataset in datasets:
-                            df = datasets[target_dataset]
-                            numeric_cols = df.select_dtypes(include=[np.number]).columns
+                        # Check if baseline models are trained first
+                        if 'trained_forecaster' in st.session_state:
+                            target_dataset = st.session_state.target_dataset
+                            target_col = st.session_state.target_column
                             
-                            if len(numeric_cols) > 0:
-                                target_series = df[numeric_cols[0]].dropna()
-                                
-                                # Create features for transformer
+                            df = datasets[target_dataset]
+                            target_series = df[target_col].dropna()
+                            
+                            if len(target_series) > 20:
+                                # Create more complex features for transformer
                                 X = pd.DataFrame({
                                     'lag_1': target_series.shift(1),
                                     'lag_3': target_series.shift(3),
-                                    'ma_12': target_series.rolling(12).mean()
+                                    'lag_5': target_series.shift(5),
+                                    'ma_3': target_series.rolling(3).mean(),
+                                    'ma_7': target_series.rolling(7).mean()
                                 }).dropna()
-                                y = target_series[X.index]
                                 
-                                transformer_model = TransformerForecaster(
-                                    input_dim=X.shape[1],
-                                    hidden_dim=64,
-                                    num_heads=4,
-                                    num_layers=2
-                                )
-                                
-                                st.success("✅ Advanced models configured!")
-                                st.session_state.models_trained = True
+                                if len(X) > 10:
+                                    y = target_series[X.index]
+                                    
+                                    # Initialize transformer model
+                                    transformer_model = TransformerForecaster(
+                                        input_dim=X.shape[1],
+                                        d_model=32,  # Smaller for limited data
+                                        nhead=2,
+                                        num_layers=1
+                                    )
+                                    
+                                    st.success(f"✅ Advanced models configured for {target_dataset}!")
+                                    st.session_state.models_trained = True
+                                    st.session_state.transformer_model = transformer_model
+                                    
+                                    # Show model architecture
+                                    st.info(f"🧠 Transformer Architecture:\n• Input dim: {X.shape[1]}\n• Hidden dim: 32\n• Attention heads: 2\n• Layers: 1")
+                                else:
+                                    st.warning("Not enough data for advanced models")
                             else:
-                                st.warning("No numeric columns found")
+                                st.warning("Insufficient data for transformer training")
                         else:
-                            st.warning("Target dataset not available")
+                            st.warning("Please train baseline models first")
                     except Exception as e:
-                        st.error(f"Advanced training failed: {e}")
+                        st.error(f"Advanced training failed: {str(e)}")
+                        st.exception(e)
         
         with model_col3:
             if st.button("📊 Deploy Ensemble"):
@@ -458,17 +500,20 @@ def create_analytics_deep_dive():
     
     st.markdown("# <i class='fas fa-microscope icon-medium'></i> Deep Analytics", unsafe_allow_html=True)
     
-    if not st.session_state.datasets_loaded:
-        st.warning("⚠️ Please load datasets from the Overview page first")
+    # Always try to load datasets
+    with st.spinner("🔄 Loading datasets for analysis..."):
+        datasets, catalog_df = load_and_process_data()
+    
+    if len(datasets) == 0:
+        st.error("❌ No datasets available. Please check data directory.")
         return
     
-    # Load datasets
-    datasets, catalog_df = load_and_process_data()
+    st.success(f"✅ Loaded {len(datasets)} datasets for analysis")
     
     # Analytics type selection
     analysis_type = st.selectbox(
         "🔬 Select Analysis Type",
-        ["Temporal Analysis", "Cross-Sectional Analysis", "Volatility Modeling", "Anomaly Detection", "Network Analysis"]
+        ["Temporal Analysis", "Cross-Sectional Analysis", "Volatility Modeling", "Anomaly Detection", "Correlation Analysis"]
     )
     
     if analysis_type == "Temporal Analysis":
@@ -479,84 +524,191 @@ def create_analytics_deep_dive():
         selected_dataset = st.selectbox("Select Dataset", dataset_names)
         
         if selected_dataset:
-            df = datasets[selected_dataset]
-            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            
-            if numeric_cols:
+            try:
+                df = datasets[selected_dataset]
+                
+                # Clean and prepare data
+                if df.empty:
+                    st.warning("Selected dataset is empty")
+                    return
+                
+                # Find numeric columns
+                numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+                
+                if not numeric_cols:
+                    st.warning("No numeric columns found in selected dataset")
+                    return
+                
                 selected_column = st.selectbox("Select Variable", numeric_cols)
                 
-                # Analysis parameters
-                col1, col2 = st.columns(2)
-                with col1:
-                    window_size = st.slider("Moving Average Window", 3, 24, 12)
-                with col2:
-                    decomposition_period = st.slider("Seasonality Period", 4, 24, 12)
+                if selected_column:
+                    # Analysis parameters
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        window_size = st.slider("Moving Average Window", 3, 24, 12)
+                    with col2:
+                        decomposition_period = st.slider("Seasonality Period", 4, 24, 12)
+                    
+                    if st.button("🚀 Run Temporal Analysis"):
+                        with st.spinner("Analyzing temporal patterns..."):
+                            try:
+                                series = df[selected_column].dropna()
+                                
+                                if len(series) < window_size:
+                                    st.warning(f"Not enough data points. Need at least {window_size} points.")
+                                    return
+                                
+                                # Create temporal visualization
+                                fig = make_subplots(
+                                    rows=2, cols=2,
+                                    subplot_titles=["Original Series", "Moving Averages", "Returns", "Volatility"]
+                                )
+                                
+                                # Original series
+                                fig.add_trace(
+                                    go.Scatter(y=series.values, mode='lines', name='Original', line=dict(color='blue')),
+                                    row=1, col=1
+                                )
+                                
+                                # Moving averages
+                                ma_short = series.rolling(window_size//2).mean()
+                                ma_long = series.rolling(window_size).mean()
+                                
+                                fig.add_trace(
+                                    go.Scatter(y=ma_short.values, mode='lines', name=f'MA {window_size//2}', line=dict(color='orange')),
+                                    row=1, col=2
+                                )
+                                fig.add_trace(
+                                    go.Scatter(y=ma_long.values, mode='lines', name=f'MA {window_size}', line=dict(color='red')),
+                                    row=1, col=2
+                                )
+                                
+                                # Returns
+                                returns = series.pct_change().dropna()
+                                if len(returns) > 0:
+                                    fig.add_trace(
+                                        go.Scatter(y=returns.values, mode='lines', name='Returns', line=dict(color='green')),
+                                        row=2, col=1
+                                    )
+                                
+                                    # Volatility
+                                    volatility = returns.rolling(window_size).std()
+                                    fig.add_trace(
+                                        go.Scatter(y=volatility.values, mode='lines', name='Volatility', line=dict(color='purple')),
+                                        row=2, col=2
+                                    )
+                                
+                                fig.update_layout(height=600, title_text=f"Temporal Analysis: {selected_column}")
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                                # Statistics
+                                st.subheader("📊 Statistical Summary")
+                                stats_col1, stats_col2, stats_col3 = st.columns(3)
+                                
+                                with stats_col1:
+                                    st.metric("Mean", f"{series.mean():.4f}")
+                                    st.metric("Std Dev", f"{series.std():.4f}")
+                                
+                                with stats_col2:
+                                    st.metric("Skewness", f"{series.skew():.4f}")
+                                    st.metric("Kurtosis", f"{series.kurtosis():.4f}")
+                                
+                                with stats_col3:
+                                    st.metric("Min", f"{series.min():.4f}")
+                                    st.metric("Max", f"{series.max():.4f}")
+                                
+                                # Additional insights
+                                st.subheader("🔍 Key Insights")
+                                
+                                insights = []
+                                
+                                # Trend analysis
+                                if len(series) > 1:
+                                    trend_direction = "Upward" if series.iloc[-1] > series.iloc[0] else "Downward"
+                                    insights.append(f"📈 Overall trend: {trend_direction}")
+                                
+                                # Volatility assessment
+                                if len(returns) > 0:
+                                    volatility_level = "High" if returns.std() > 0.05 else "Medium" if returns.std() > 0.02 else "Low"
+                                    insights.append(f"🌊 Volatility: {volatility_level} ({returns.std():.4f})")
+                                
+                                # Display insights
+                                for insight in insights:
+                                    st.info(insight)
+                                
+                            except Exception as e:
+                                st.error(f"Analysis failed: {str(e)}")
+                                st.exception(e)
+            
+            except Exception as e:
+                st.error(f"Error loading dataset: {str(e)}")
+                st.exception(e)
+    
+    elif analysis_type == "Correlation Analysis":
+        st.subheader("🔗 Correlation Analysis")
+        
+        # Dataset selection
+        dataset_names = list(datasets.keys())
+        selected_dataset = st.selectbox("Select Dataset", dataset_names, key="corr_dataset")
+        
+        if selected_dataset:
+            try:
+                df = datasets[selected_dataset]
+                numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
                 
-                if st.button("🚀 Run Temporal Analysis"):
-                    with st.spinner("Analyzing temporal patterns..."):
-                        series = df[selected_column].dropna()
-                        
-                        # Create temporal visualization
-                        fig = make_subplots(
-                            rows=2, cols=2,
-                            subplot_titles=["Original Series", "Moving Averages", "Returns", "Volatility"],
-                            specs=[[{"secondary_y": True}, {"secondary_y": True}],
-                                   [{"secondary_y": False}, {"secondary_y": False}]]
-                        )
-                        
-                        # Original series
-                        fig.add_trace(
-                            go.Scatter(y=series, mode='lines', name='Original', line=dict(color='blue')),
-                            row=1, col=1
-                        )
-                        
-                        # Moving averages
-                        ma_short = series.rolling(window_size//2).mean()
-                        ma_long = series.rolling(window_size).mean()
-                        
-                        fig.add_trace(
-                            go.Scatter(y=ma_short, mode='lines', name=f'MA {window_size//2}', line=dict(color='orange')),
-                            row=1, col=2
-                        )
-                        fig.add_trace(
-                            go.Scatter(y=ma_long, mode='lines', name=f'MA {window_size}', line=dict(color='red')),
-                            row=1, col=2
-                        )
-                        
-                        # Returns
-                        returns = series.pct_change().dropna()
-                        fig.add_trace(
-                            go.Scatter(y=returns, mode='lines', name='Returns', line=dict(color='green')),
-                            row=2, col=1
-                        )
-                        
-                        # Volatility
-                        volatility = returns.rolling(window_size).std()
-                        fig.add_trace(
-                            go.Scatter(y=volatility, mode='lines', name='Volatility', line=dict(color='purple')),
-                            row=2, col=2
-                        )
-                        
-                        fig.update_layout(height=600, title_text=f"Temporal Analysis: {selected_column}")
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Statistics
-                        st.subheader("📊 Statistical Summary")
-                        stats_col1, stats_col2, stats_col3 = st.columns(3)
-                        
-                        with stats_col1:
-                            st.metric("Mean", f"{series.mean():.4f}")
-                            st.metric("Std Dev", f"{series.std():.4f}")
-                        
-                        with stats_col2:
-                            st.metric("Skewness", f"{series.skew():.4f}")
-                            st.metric("Kurtosis", f"{series.kurtosis():.4f}")
-                        
-                        with stats_col3:
-                            st.metric("Min", f"{series.min():.4f}")
-                            st.metric("Max", f"{series.max():.4f}")
-            else:
-                st.warning("No numeric columns found in selected dataset")
+                if len(numeric_cols) > 1:
+                    if st.button("🔍 Generate Correlation Matrix"):
+                        with st.spinner("Calculating correlations..."):
+                            corr_matrix = df[numeric_cols].corr()
+                            
+                            # Correlation heatmap
+                            fig = go.Figure(data=go.Heatmap(
+                                z=corr_matrix.values,
+                                x=corr_matrix.columns,
+                                y=corr_matrix.columns,
+                                colorscale='RdBu_r',
+                                zmid=0
+                            ))
+                            
+                            fig.update_layout(
+                                title="Correlation Matrix",
+                                height=500
+                            )
+                            
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Top correlations
+                            st.subheader("🔝 Strongest Correlations")
+                            corr_pairs = []
+                            for i in range(len(corr_matrix.columns)):
+                                for j in range(i+1, len(corr_matrix.columns)):
+                                    corr_pairs.append({
+                                        'Variable 1': corr_matrix.columns[i],
+                                        'Variable 2': corr_matrix.columns[j],
+                                        'Correlation': corr_matrix.iloc[i, j]
+                                    })
+                            
+                            corr_df = pd.DataFrame(corr_pairs)
+                            corr_df = corr_df.reindex(corr_df['Correlation'].abs().sort_values(ascending=False).index)
+                            
+                            st.dataframe(corr_df.head(10), use_container_width=True)
+                
+                else:
+                    st.warning("Need at least 2 numeric columns for correlation analysis")
+            
+            except Exception as e:
+                st.error(f"Correlation analysis failed: {str(e)}")
+    
+    else:
+        st.info(f"🚧 {analysis_type} coming soon...")
+        st.markdown("""
+        **Available Soon:**
+        - Cross-sectional analysis
+        - Advanced volatility modeling
+        - Multi-variate anomaly detection
+        - Regime change detection
+        """)
+    
 
 def main():
     """Main application"""
@@ -589,7 +741,106 @@ def main():
         create_analytics_deep_dive()
     elif page == "📊 Model Performance":
         st.markdown("# <i class='fas fa-chart-bar icon-medium'></i> Model Performance", unsafe_allow_html=True)
-        st.info("🚧 Model performance dashboard coming soon...")
+        
+        if 'trained_forecaster' in st.session_state:
+            st.success("✅ Models available for evaluation")
+            
+            # Load the training data
+            datasets, _ = load_and_process_data()
+            target_dataset = st.session_state.target_dataset
+            target_col = st.session_state.target_column
+            forecaster = st.session_state.trained_forecaster
+            
+            if target_dataset in datasets:
+                df = datasets[target_dataset]
+                target_series = df[target_col].dropna()
+                
+                # Create features
+                X = pd.DataFrame({
+                    'lag_1': target_series.shift(1),
+                    'lag_2': target_series.shift(2),
+                    'target': target_series
+                }).dropna()
+                
+                if len(X) > 5:
+                    y_true = X['target']
+                    X_features = X[['lag_1', 'lag_2']]
+                    
+                    # Generate predictions
+                    try:
+                        predictions = forecaster.predict(X_features)
+                        
+                        # Calculate metrics
+                        from sklearn.metrics import mean_squared_error, mean_absolute_error
+                        mse = mean_squared_error(y_true, predictions)
+                        mae = mean_absolute_error(y_true, predictions)
+                        rmse = np.sqrt(mse)
+                        
+                        # Display metrics
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("RMSE", f"{rmse:.4f}")
+                        with col2:
+                            st.metric("MAE", f"{mae:.4f}")
+                        with col3:
+                            mape = np.mean(np.abs((y_true - predictions) / y_true)) * 100
+                            st.metric("MAPE", f"{mape:.2f}%")
+                        
+                        # Prediction vs Actual plot
+                        fig = go.Figure()
+                        
+                        fig.add_trace(go.Scatter(
+                            y=y_true.values,
+                            mode='lines',
+                            name='Actual',
+                            line=dict(color='blue')
+                        ))
+                        
+                        fig.add_trace(go.Scatter(
+                            y=predictions,
+                            mode='lines',
+                            name='Predicted',
+                            line=dict(color='red', dash='dash')
+                        ))
+                        
+                        fig.update_layout(
+                            title=f"Model Performance: {target_col}",
+                            xaxis_title="Time Index",
+                            yaxis_title="Value",
+                            height=500
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Residuals analysis
+                        residuals = y_true - predictions
+                        
+                        fig_residuals = go.Figure()
+                        fig_residuals.add_trace(go.Scatter(
+                            y=residuals,
+                            mode='markers',
+                            name='Residuals',
+                            marker=dict(color='green')
+                        ))
+                        
+                        fig_residuals.update_layout(
+                            title="Residuals Analysis",
+                            xaxis_title="Time Index",
+                            yaxis_title="Residual",
+                            height=400
+                        )
+                        
+                        st.plotly_chart(fig_residuals, use_container_width=True)
+                        
+                    except Exception as e:
+                        st.error(f"Error generating predictions: {str(e)}")
+                        st.exception(e)
+                else:
+                    st.warning("Insufficient data for performance evaluation")
+            else:
+                st.error("Training dataset no longer available")
+        else:
+            st.info("🚧 No trained models available. Please train models first in the System Overview.")
     elif page == "🛡️ Risk Dashboard":
         st.markdown("# <i class='fas fa-shield-alt icon-medium'></i> Risk Dashboard", unsafe_allow_html=True)
         st.info("🚧 Risk monitoring dashboard coming soon...")
