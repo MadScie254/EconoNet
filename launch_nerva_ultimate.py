@@ -14,6 +14,13 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
+import warnings
+import logging
+
+# Suppress PyTorch and other warnings for cleaner output
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
+logging.getLogger('torch').setLevel(logging.ERROR)
 
 # Page Configuration (MUST be first Streamlit command)
 st.set_page_config(
