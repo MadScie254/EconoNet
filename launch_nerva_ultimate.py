@@ -31,7 +31,14 @@ st.set_page_config(
 )
 
 # Add NERVA to path
-sys.path.append(str(Path(__file__).parent / "nerva"))
+nerva_path = Path(__file__).parent / "nerva"
+if not nerva_path.exists():
+    st.error(f"NERVA directory not found at {nerva_path}. Please check your project structure.")
+    st.stop()
+
+sys.path.append(str(nerva_path))
+# Also add the parent directory to ensure proper import resolution
+sys.path.append(str(Path(__file__).parent))
 
 # NERVA Imports
 try:
