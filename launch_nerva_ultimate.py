@@ -1,6 +1,6 @@
 """
-NERVA Enhanced System Launcher
-GODMODE_X: Complete economic intelligence deployment
+NERVA Professional Economic Intelligence System
+Advanced Analytics Platform for Economic Intelligence Operations
 """
 
 import streamlit as st
@@ -17,18 +17,31 @@ from datetime import datetime, timedelta
 import warnings
 import logging
 
-# Suppress PyTorch and other warnings for cleaner output
+# Suppress warnings for cleaner output
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=FutureWarning)
 logging.getLogger('torch').setLevel(logging.ERROR)
 
 # Page Configuration (MUST be first Streamlit command)
 st.set_page_config(
-    page_title="NERVA: National Economic & Risk Visual Analytics",
-    page_icon="🧠",
+    page_title="NERVA Professional - Economic Intelligence",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Import professional styling and analytics
+try:
+    from nerva.ui.professional_styles import (
+        NERVA_PROFESSIONAL_CSS, NERVA_ICONS,
+        get_professional_header, get_metric_card, 
+        get_status_indicator, get_alert_box, get_progress_bar
+    )
+    from nerva.analytics.advanced_engine import AdvancedAnalyticsEngine
+    STYLING_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Professional styling not available: {e}")
+    STYLING_AVAILABLE = False
 
 # Add NERVA to path
 nerva_path = Path(__file__).parent / "nerva"
