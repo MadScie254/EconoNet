@@ -58,9 +58,9 @@ class NERVADashboard:
                     self.datasets = self.processor.scan_all_files()
                     st.session_state.datasets = self.datasets
                     st.session_state.data_loaded = True
-                    st.success(f"✅ Loaded {len(self.datasets)} datasets successfully!")
+                    st.success(f"LOADED {len(self.datasets)} datasets successfully!")
                 except Exception as e:
-                    st.error(f"❌ Failed to load data: {str(e)}")
+                    st.error(f"FAILED to load data: {str(e)}")
                     return False
         else:
             self.datasets = st.session_state.datasets
@@ -68,7 +68,7 @@ class NERVADashboard:
     
     def render_sidebar(self):
         """Render main control sidebar"""
-        st.sidebar.title("🧠 NERVA Control Center")
+        st.sidebar.title("NERVA Control Center")
         
         # Data refresh
         if st.sidebar.button("🔄 Refresh Data", help="Reload CBK data archive"):
@@ -81,7 +81,7 @@ class NERVADashboard:
         if self.datasets:
             dataset_names = list(self.datasets.keys())
             selected_dataset = st.sidebar.selectbox(
-                "📊 Select Dataset",
+                "Select Dataset",
                 dataset_names,
                 index=0,
                 help="Choose dataset for analysis"
@@ -94,7 +94,7 @@ class NERVADashboard:
                 
                 if numeric_cols:
                     target_variable = st.sidebar.selectbox(
-                        "🎯 Target Variable",
+                        "Target Variable",
                         numeric_cols,
                         help="Variable to forecast"
                     )
@@ -110,7 +110,7 @@ class NERVADashboard:
         st.sidebar.markdown("---")
         
         # Forecasting controls
-        st.sidebar.subheader("🔮 Forecast Settings")
+        st.sidebar.subheader("Forecast Settings")
         
         forecast_horizon = st.sidebar.slider(
             "Forecast Horizon (months)",

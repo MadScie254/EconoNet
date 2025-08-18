@@ -12,18 +12,18 @@ def install_requirements():
     requirements_file = Path(__file__).parent / "requirements_nerva.txt"
     
     if requirements_file.exists():
-        print("📦 Installing NERVA dependencies...")
+        print("Installing NERVA dependencies...")
         try:
             subprocess.check_call([
                 sys.executable, "-m", "pip", "install", "-r", str(requirements_file)
             ])
-            print("✅ Dependencies installed successfully!")
+            print("SUCCESS: Dependencies installed successfully!")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to install dependencies: {e}")
+            print(f"ERROR: Failed to install dependencies: {e}")
             return False
     else:
-        print("❌ Requirements file not found")
+        print("ERROR: Requirements file not found")
         return False
 
 def launch_dashboard():
@@ -31,11 +31,11 @@ def launch_dashboard():
     dashboard_path = Path(__file__).parent / "nerva" / "ui" / "dashboard.py"
     
     if not dashboard_path.exists():
-        print(f"❌ Dashboard file not found: {dashboard_path}")
+        print(f"ERROR: Dashboard file not found: {dashboard_path}")
         return False
     
-    print("🚀 Launching NERVA Dashboard...")
-    print(f"📍 Dashboard URL: http://localhost:8501")
+    print("LAUNCHING: NERVA Dashboard...")
+    print(f"URL: http://localhost:8501")
     
     try:
         subprocess.run([
@@ -45,16 +45,16 @@ def launch_dashboard():
             "--browser.gatherUsageStats", "false"
         ])
     except KeyboardInterrupt:
-        print("\n👋 NERVA Dashboard stopped")
+        print("\nNERVA Dashboard stopped")
     except Exception as e:
-        print(f"❌ Failed to launch dashboard: {e}")
+        print(f"ERROR: Failed to launch dashboard: {e}")
         return False
     
     return True
 
 def main():
     """Main launch function"""
-    print("🧠 NERVA: National Economic & Risk Visual Analytics")
+    print("NERVA: National Economic & Risk Visual Analytics")
     print("=" * 50)
     
     # Check if we should install dependencies

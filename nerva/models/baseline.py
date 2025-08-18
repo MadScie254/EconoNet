@@ -94,7 +94,7 @@ class BaselineForecaster:
         """Train ensemble of baseline models"""
         
         self.target_column = target_column
-        logger.info(f"🚀 Training baseline ensemble for target: {target_column}")
+        logger.info(f"TRAINING baseline ensemble for target: {target_column}")
         
         # Prepare features
         df_features = self.prepare_features(df)
@@ -167,10 +167,10 @@ class BaselineForecaster:
                     'mape': mape
                 }
                 
-                logger.info(f"✅ {model_name}: RMSE={rmse:.4f}, MAE={mae:.4f}, MAPE={mape:.2f}%")
+                logger.info(f"SUCCESS {model_name}: RMSE={rmse:.4f}, MAE={mae:.4f}, MAPE={mape:.2f}%")
                 
             except Exception as e:
-                logger.warning(f"❌ Failed to train {model_name}: {str(e)}")
+                logger.warning(f"FAILED to train {model_name}: {str(e)}")
                 continue
         
         # Ensemble prediction (simple average)
@@ -186,7 +186,7 @@ class BaselineForecaster:
                 'mape': ensemble_mape
             }
             
-            logger.info(f"🎯 Ensemble: RMSE={ensemble_rmse:.4f}, MAE={ensemble_mae:.4f}, MAPE={ensemble_mape:.2f}%")
+            logger.info(f"ENSEMBLE COMPLETE: RMSE={ensemble_rmse:.4f}, MAE={ensemble_mae:.4f}, MAPE={ensemble_mape:.2f}%")
         
         # Store performance metrics
         self.performance_metrics[target_column] = model_scores

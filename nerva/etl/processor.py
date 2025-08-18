@@ -63,7 +63,7 @@ class CBKDataProcessor:
             try:
                 dataset_name = file_path.stem.lower().replace(" ", "_").replace("(", "").replace(")", "")
                 
-                logger.info(f"📊 Processing: {file_path.name}")
+                logger.info(f"Processing: {file_path.name}")
                 df = self._load_file(file_path)
                 
                 if df is not None and not df.empty:
@@ -78,13 +78,13 @@ class CBKDataProcessor:
                     # Save to parquet
                     self._save_parquet(df_clean, dataset_name)
                     
-                    logger.info(f"✅ {dataset_name}: {len(df_clean)} rows, Quality Score: {quality.quality_score:.2f}")
+                    logger.info(f"SUCCESS {dataset_name}: {len(df_clean)} rows, Quality Score: {quality.quality_score:.2f}")
                 
             except Exception as e:
-                logger.error(f"❌ Failed to process {file_path.name}: {str(e)}")
+                logger.error(f"FAILED to process {file_path.name}: {str(e)}")
                 continue
         
-        logger.info(f"🎯 Successfully processed {len(datasets)} datasets")
+        logger.info(f"COMPLETE: Successfully processed {len(datasets)} datasets")
         return datasets
     
     def _load_file(self, file_path: Path) -> Optional[pd.DataFrame]:

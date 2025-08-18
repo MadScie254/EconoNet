@@ -67,7 +67,7 @@ class ModelConfig(BaseModel):
 class UIConfig(BaseModel):
     """Streamlit UI configuration"""
     page_title: str = "NERVA: National Economic & Risk Visual Analytics"
-    page_icon: str = "🧠"
+    page_icon: str = "N"
     layout: str = "wide"
     
     # Dashboard refresh rates
