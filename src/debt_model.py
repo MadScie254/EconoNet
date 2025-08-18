@@ -45,6 +45,10 @@ try:
     import pmdarima as pm
 except Exception:
     pm = None
+try:
+    from src.data_fetchers import fetch_world_bank_indicator
+except Exception:
+    fetch_world_bank_indicator = None
 
 
 class DivineSupremeDebtPredictor:
@@ -480,8 +484,48 @@ class DivineSupremeDebtPredictor:
                 df[f'debt_stress_{window}'] = (df[self.target_col] - df[f'debt_ma_{window}']) / df[f'debt_volatility_{window}']
         
         # Sustainability ratios (proxies)
-        gdp_proxy = df[self.target_col].rolling(window=12).mean()  # Simplified proxy
-        df['debt_to_gdp_proxy'] = df[self.target_col] / gdp_proxy * 100
+        # Try to fetch real GDP (World Bank) and compute debt-to-GDP. Fall back to rolling proxy if unavailable.
+        df['gdp'] = np.nan
+        if fetch_world_bank_indicator is not None:
+            try:
+                start_year = int(df['year'].min()) if 'year' in df.columns else 2000
+                end_year = int(df['year'].max()) if 'year' in df.columns else datetime.now().year
+                wb = fetch_world_bank_indicator('KEN', 'NY.GDP.MKTP.CD', start_year=start_year, end_year=end_year, force_refresh=False)
+                # World Bank API returns [metadata, data] usually
+                data_list = None
+                if isinstance(wb, list) and len(wb) > 1 and isinstance(wb[1], list):
+                    data_list = wb[1]
+                elif isinstance(wb, dict) and 'data' in wb:
+                    data_list = wb['data']
+                elif isinstance(wb, list):
+                    data_list = wb
+
+                if data_list:
+                    gdp_by_year = {}
+                    for item in data_list:
+                        try:
+                            year = int(item.get('date'))
+                            val = item.get('value')
+                            gdp_by_year[year] = float(val) if val is not None else None
+                        except Exception:
+                            continue
+
+                    # Map annual GDP to monthly rows by year mapping
+                    if 'year' in df.columns:
+                        df['gdp'] = df['year'].map(gdp_by_year)
+                        # If some years missing, forward/backfill
+                        df['gdp'] = df['gdp'].fillna(method='ffill').fillna(method='bfill')
+            except Exception:
+                pass
+
+        # If GDP still missing, use a 12-month rolling mean as proxy
+        if df['gdp'].isna().all():
+            gdp_proxy = df[self.target_col].rolling(window=12).mean()
+            df['debt_to_gdp'] = df[self.target_col] / gdp_proxy * 100
+        else:
+            df['debt_to_gdp'] = df[self.target_col] / df['gdp'] * 100
+
+        # Debt service proxy
         df['debt_service_proxy'] = df['debt_velocity'] / df[self.target_col] * 100
         
         # Advanced statistical features

@@ -22,6 +22,12 @@ warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=FutureWarning)
 logging.getLogger('torch').setLevel(logging.ERROR)
 
+# DIVINE Debt predictor (light integration)
+try:
+    from src.debt_model import DivineSupremeDebtPredictor
+except Exception:
+    DivineSupremeDebtPredictor = None
+
 # Page Configuration (MUST be first Streamlit command)
 st.set_page_config(
     page_title="NERVA Professional - Economic Intelligence",
@@ -721,6 +727,58 @@ def create_analytics_deep_dive():
         - Multi-variate anomaly detection
         - Regime change detection
         """)
+
+
+def create_divine_debt_page():
+    """DIVINE Debt page: historical series, features, and predictions"""
+    st.markdown("# <i class='fas fa-landmark icon-medium'></i> DIVINE Debt Analytics", unsafe_allow_html=True)
+
+    if DivineSupremeDebtPredictor is None:
+        st.error("DIVINE debt predictor not available (import failed). Check src.debt_model.")
+        return
+
+    with st.spinner("🔄 Loading DIVINE debt predictor..."):
+        dp = DivineSupremeDebtPredictor()
+        dp.load_debt_data('data/raw/')
+        dp.prepare_debt_time_series()
+
+    if not hasattr(dp, 'debt_ts') or dp.debt_ts is None:
+        st.error("No debt time series available")
+        return
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        ts = dp.debt_ts[[dp.target_col]].dropna()
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=ts.index, y=ts[dp.target_col], mode='lines+markers', name='Total Debt'))
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        st.metric('Latest Date', str(ts.index.max()))
+        st.metric('Latest Total Debt', f"{ts[dp.target_col].iloc[-1]:,.0f}")
+
+    if st.button('🧪 Generate Features & Quick Train'):
+        with st.spinner('Creating features and training a light model...'):
+            dp.create_divine_debt_features()
+            # Light model for interactive demo
+            try:
+                from sklearn.ensemble import RandomForestRegressor
+                dp.models = {'Interactive_RF': RandomForestRegressor(n_estimators=50, random_state=42)}
+            except Exception:
+                pass
+            dp.train_divine_models()
+            preds = dp.generate_debt_predictions() or {}
+
+            if preds:
+                st.success('✅ Model trained and predictions generated')
+                st.json(preds)
+                if 'Divine_Ensemble' in preds:
+                    next_date = pd.to_datetime(ts.index.max()) + pd.offsets.MonthBegin(1)
+                    st.write(f"Ensemble prediction for {next_date.strftime('%Y-%m')}: {preds['Divine_Ensemble']:,}")
+            else:
+                st.warning('No predictions available')
+
     
 
 def main():
@@ -736,7 +794,7 @@ def main():
     
     page = st.sidebar.selectbox(
         "📍 Navigate",
-        ["🏠 System Overview", "🔬 Analytics Deep Dive", "📊 Model Performance", "🛡️ Risk Dashboard", "⚙️ System Settings"],
+        ["🏠 System Overview", "🔬 Analytics Deep Dive", "📊 Model Performance", "🧾 DIVINE Debt", "🛡️ Risk Dashboard", "⚙️ System Settings"],
         help="Select a page to navigate to"
     )
     
@@ -752,6 +810,8 @@ def main():
         create_system_overview()
     elif page == "🔬 Analytics Deep Dive":
         create_analytics_deep_dive()
+    elif page == "🧾 DIVINE Debt":
+        create_divine_debt_page()
     elif page == "📊 Model Performance":
         st.markdown("# <i class='fas fa-chart-bar icon-medium'></i> Model Performance", unsafe_allow_html=True)
         
