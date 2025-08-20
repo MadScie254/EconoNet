@@ -482,6 +482,7 @@ def main():
             "Data Explorer": {"icon": "fas fa-database", "description": "Raw Data Analysis"},
             "Predictive Models": {"icon": "fas fa-brain", "description": "AI-Powered Forecasting"},
             "Risk Analysis": {"icon": "fas fa-shield-alt", "description": "Risk Assessment"},
+            "Notebook Analysis": {"icon": "fas fa-book-open", "description": "In-depth Analysis"},
             "Policy Simulator": {"icon": "fas fa-cogs", "description": "Policy Impact Analysis"},
             "Real-time Monitor": {"icon": "fas fa-satellite-dish", "description": "Live Data Feeds"}
         }
@@ -525,7 +526,9 @@ def main():
     # Initialize components
     data_manager = DataManager()
     notebook_integrator = NotebookIntegrator()
-    
+    api_integrator = FreeAPIIntegrator()
+    fx_predictor = FXPredictor()
+
     # Load data
     with st.spinner("Loading economic data..."):
         economic_data = data_manager.load_economic_data()
@@ -635,6 +638,11 @@ def main():
         
         # Model selection
         models = {
+            "FX Rate Prediction (KES/USD)": {
+                "icon": "fas fa-dollar-sign",
+                "description": "Predict future KES/USD exchange rates using a hybrid model.",
+                "use_cases": ["FX Trading", "Import/Export Planning", "Risk Hedging"]
+            },
             "ARIMA Forecasting": {
                 "icon": "fas fa-wave-square",
                 "description": "Time series analysis with autoregressive integrated moving average",
@@ -668,80 +676,105 @@ def main():
         </div>
         """, unsafe_allow_html=True)
         
-        # Model parameters
-        col1, col2 = st.columns(2)
-        with col1:
-            forecast_horizon = st.slider("Forecast Horizon (months)", 1, 24, 12)
-            confidence_level = st.slider("Confidence Level (%)", 80, 99, 95)
-        
-        with col2:
-            target_variable = st.selectbox(
-                "Target Variable",
-                ["GDP Growth", "Inflation Rate", "Exchange Rate", "Interest Rate"]
-            )
-            scenario = st.selectbox(
-                "Economic Scenario",
-                ["Baseline", "Optimistic", "Pessimistic", "Crisis"]
-            )
-        
-        # Run forecast button
-        if st.button("🚀 Generate Forecast", type="primary"):
-            with st.spinner(f"Running {selected_model} model..."):
-                # Simulate forecast generation
-                import time
-                time.sleep(2)
-                
-                # Create sample forecast data
-                dates = pd.date_range(start=datetime.now(), periods=forecast_horizon, freq='M')
-                forecast_data = pd.DataFrame({
-                    'Forecast': np.random.normal(5.0, 1.0, forecast_horizon),
-                    'Lower_Bound': np.random.normal(3.0, 0.5, forecast_horizon),
-                    'Upper_Bound': np.random.normal(7.0, 0.5, forecast_horizon)
-                }, index=dates)
-                
-                # Display forecast
-                fig = go.Figure()
-                
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.index,
-                    y=forecast_data['Forecast'],
-                    mode='lines+markers',
-                    name='Forecast',
-                    line=dict(color='#667eea', width=3)
-                ))
-                
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.index,
-                    y=forecast_data['Upper_Bound'],
-                    mode='lines',
-                    name=f'{confidence_level}% Confidence',
-                    line=dict(color='rgba(102, 126, 234, 0.3)'),
-                    showlegend=False
-                ))
-                
-                fig.add_trace(go.Scatter(
-                    x=forecast_data.index,
-                    y=forecast_data['Lower_Bound'],
-                    mode='lines',
-                    name=f'{confidence_level}% Confidence',
-                    line=dict(color='rgba(102, 126, 234, 0.3)'),
-                    fill='tonexty',
-                    fillcolor='rgba(102, 126, 234, 0.2)',
-                    showlegend=False
-                ))
-                
-                fig.update_layout(
-                    title=f"{target_variable} Forecast - {scenario} Scenario",
-                    xaxis_title="Date",
-                    yaxis_title=target_variable,
-                    template="plotly_white",
-                    font=dict(family="Inter, sans-serif"),
-                    height=500
+        if selected_model == "FX Rate Prediction (KES/USD)":
+            days_to_predict = st.slider("Days to Predict", 7, 90, 30)
+            if st.button("Run FX Prediction", type="primary"):
+                with st.spinner("Running FX Prediction Model..."):
+                    try:
+                        prediction_results = fx_predictor.predict_future(days=days_to_predict)
+                        
+                        st.subheader("FX Prediction Results")
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=prediction_results['Date'], y=prediction_results['Predicted_Rate'], mode='lines', name='Predicted Rate'))
+                        fig.add_trace(go.Scatter(x=prediction_results['Date'], y=prediction_results['Confidence_Interval_Lower'], fill=None, mode='lines', line_color='rgba(102, 126, 234, 0.3)', name='Confidence Interval'))
+                        fig.add_trace(go.Scatter(x=prediction_results['Date'], y=prediction_results['Confidence_Interval_Upper'], fill='tonexty', mode='lines', line_color='rgba(102, 126, 234, 0.3)', name='Confidence Interval'))
+                        
+                        fig.update_layout(title=f"KES/USD Forecast for the next {days_to_predict} days",
+                                          xaxis_title="Date",
+                                          yaxis_title="KES/USD Rate",
+                                          template="plotly_white")
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        st.dataframe(prediction_results)
+                        
+                    except Exception as e:
+                        st.error(f"An error occurred during FX prediction: {e}")
+
+        else:
+            # Model parameters
+            col1, col2 = st.columns(2)
+            with col1:
+                forecast_horizon = st.slider("Forecast Horizon (months)", 1, 24, 12)
+                confidence_level = st.slider("Confidence Level (%)", 80, 99, 95)
+            
+            with col2:
+                target_variable = st.selectbox(
+                    "Target Variable",
+                    ["GDP Growth", "Inflation Rate", "Exchange Rate", "Interest Rate"]
                 )
-                
-                st.plotly_chart(fig, use_container_width=True)
-                
-                st.success(f"✅ Forecast completed! Model confidence: {confidence_level}%")
+                scenario = st.selectbox(
+                    "Economic Scenario",
+                    ["Baseline", "Optimistic", "Pessimistic", "Crisis"]
+                )
+            
+            # Run forecast button
+            if st.button("🚀 Generate Forecast", type="primary"):
+                with st.spinner(f"Running {selected_model} model..."):
+                    # Simulate forecast generation
+                    import time
+                    time.sleep(2)
+                    
+                    # Create sample forecast data
+                    dates = pd.date_range(start=datetime.now(), periods=forecast_horizon, freq='M')
+                    forecast_data = pd.DataFrame({
+                        'Forecast': np.random.normal(5.0, 1.0, forecast_horizon),
+                        'Lower_Bound': np.random.normal(3.0, 0.5, forecast_horizon),
+                        'Upper_Bound': np.random.normal(7.0, 0.5, forecast_horizon)
+                    }, index=dates)
+                    
+                    # Display forecast
+                    fig = go.Figure()
+                    
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.index,
+                        y=forecast_data['Forecast'],
+                        mode='lines+markers',
+                        name='Forecast',
+                        line=dict(color='#667eea', width=3)
+                    ))
+                    
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.index,
+                        y=forecast_data['Upper_Bound'],
+                        mode='lines',
+                        name=f'{confidence_level}% Confidence',
+                        line=dict(color='rgba(102, 126, 234, 0.3)'),
+                        showlegend=False
+                    ))
+                    
+                    fig.add_trace(go.Scatter(
+                        x=forecast_data.index,
+                        y=forecast_data['Lower_Bound'],
+                        mode='lines',
+                        name=f'{confidence_level}% Confidence',
+                        line=dict(color='rgba(102, 126, 234, 0.3)'),
+                        fill='tonexty',
+                        fillcolor='rgba(102, 126, 234, 0.2)',
+                        showlegend=False
+                    ))
+                    
+                    fig.update_layout(
+                        title=f"{target_variable} Forecast - {scenario} Scenario",
+                        xaxis_title="Date",
+                        yaxis_title=target_variable,
+                        template="plotly_white",
+                        font=dict(family="Inter, sans-serif"),
+                        height=500
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    st.success(f"✅ Forecast completed! Model confidence: {confidence_level}%")
     
     elif selected_page == "Risk Analysis":
         st.markdown("""
@@ -797,45 +830,109 @@ def main():
                 <div class="metric-label">Max Drawdown</div>
             </div>
             """, unsafe_allow_html=True)
-        
-        # Integrated notebook execution
-        if st.button("🔄 Run Risk Analysis Notebook"):
-            st.info("🚀 Executing comprehensive risk analysis...")
-            
-            # Display risk analysis results (simulated)
-            risk_scenarios = ["Base Case", "Stress Test", "Crisis Scenario"]
-            risk_values = [2.3, 5.7, 12.4]
-            
-            fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=risk_scenarios,
-                y=risk_values,
-                marker_color=['#10b981', '#f59e0b', '#ef4444'],
-                text=[f"{val}%" for val in risk_values],
-                textposition='auto'
-            ))
-            
-            fig.update_layout(
-                title="Value at Risk Across Scenarios",
-                yaxis_title="VaR (%)",
-                template="plotly_white",
-                font=dict(family="Inter, sans-serif"),
-                height=400
+
+    elif selected_page == "Notebook Analysis":
+        st.markdown("""
+        <div class="chart-container">
+            <h2><i class="fas fa-book-open"></i> In-depth Notebook Analysis</h2>
+            <p>Explore detailed data stories and analyses from our research notebooks.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        available_notebooks = notebook_integrator.available_notebooks
+        if not available_notebooks:
+            st.warning("No analysis notebooks found.")
+        else:
+            selected_notebook_name = st.selectbox(
+                "Select Analysis Notebook",
+                list(available_notebooks.keys()),
+                format_func=lambda name: available_notebooks[name]['title']
             )
-            
-            st.plotly_chart(fig, use_container_width=True)
-    
-    # Footer
-    st.markdown("""
-    <div style="margin-top: 3rem; padding: 2rem; text-align: center; border-top: 1px solid #e2e8f0;">
-        <p style="color: #64748b; margin: 0;">
-            <i class="fas fa-copyright"></i> 2024 EconoNet - Kenya Economic Intelligence Platform
-        </p>
-        <p style="color: #64748b; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
-            Powered by Advanced Analytics & AI | Built with ❤️ for Kenya's Economic Future
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+
+            if selected_notebook_name:
+                nb_info = available_notebooks[selected_notebook_name]
+                st.markdown(f"""
+                <div class="data-insight">
+                    <h3><i class="fas fa-file-alt"></i> {nb_info['title']}</h3>
+                    <p><strong>Last Modified:</strong> {nb_info['modified'].strftime('%Y-%m-%d %H:%M:%S')}</p>
+                    <p><strong>Size:</strong> {nb_info['size'] / 1024:.2f} KB</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                nb = notebook_integrator.load_notebook(selected_notebook_name)
+                if nb:
+                    for i, cell in enumerate(nb.cells):
+                        if cell.cell_type == 'markdown':
+                            st.markdown(cell.source, unsafe_allow_html=True)
+                        elif cell.cell_type == 'code':
+                            with st.expander(f"Code Cell {i+1}", expanded=False):
+                                st.code(cell.source, language='python')
+
+    elif selected_page == "Real-time Monitor":
+        st.markdown("""
+        <div class="chart-container">
+            <h2><i class="fas fa-satellite-dish"></i> Real-time Economic Monitor</h2>
+            <p>Live data feeds for currencies, commodities, and global markets.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Fetch and display data
+        with st.spinner("Fetching live data..."):
+            # Exchange Rates
+            st.subheader("Forex Rates (Base: USD)")
+            exchange_rates = api_integrator.get_exchange_rates()
+            if 'error' not in exchange_rates:
+                col1, col2, col3, col4 = st.columns(4)
+                major_rates = {'KES': exchange_rates.get('kes_usd'), 'EUR': exchange_rates['rates'].get('EUR'), 'GBP': exchange_rates['rates'].get('GBP'), 'JPY': exchange_rates['rates'].get('JPY')}
+                icons = {'KES': 'fas fa-coins', 'EUR': 'fas fa-euro-sign', 'GBP': 'fas fa-pound-sign', 'JPY': 'fas fa-yen-sign'}
+                
+                for i, (currency, rate) in enumerate(major_rates.items()):
+                    if rate is not None:
+                        with locals()[f"col{i+1}"]:
+                            st.markdown(f"""
+                            <div class="metric-card">
+                                <div class="metric-icon"><i class="{icons[currency]}"></i></div>
+                                <div class="metric-value">{rate:.2f}</div>
+                                <div class="metric-label">USD/{currency}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                
+                with st.expander("View all exchange rates"):
+                    st.json(exchange_rates.get('rates', {}))
+
+            # Crypto Rates
+            st.subheader("Cryptocurrency Prices")
+            crypto_rates = api_integrator.get_crypto_rates()
+            if 'error' not in crypto_rates:
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Bitcoin (USD)", f"${crypto_rates.get('bitcoin_usd', 0):,.2f}")
+                with col2:
+                    st.metric("Bitcoin (EUR)", f"€{crypto_rates.get('bitcoin_eur', 0):,.2f}")
+                with col3:
+                    st.metric("Bitcoin (KES)", f"Ksh{crypto_rates.get('bitcoin_kes', 0):,.2f}")
+
+            # World Bank Data
+            st.subheader("Kenya - World Bank Indicators")
+            wb_indicators = ['gdp', 'inflation', 'unemployment']
+            wb_data = {}
+            for indicator in wb_indicators:
+                wb_data[indicator] = api_integrator.get_world_bank_data(indicator)
+
+            if wb_data:
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    gdp_data = wb_data.get('gdp')
+                    if gdp_data and gdp_data.get('data') and gdp_data['data'][0].get('value') is not None:
+                        st.metric("GDP (Current USD)", f"${gdp_data['data'][0]['value']:,.0f} ({gdp_data['data'][0]['date']})")
+                with col2:
+                    inflation_data = wb_data.get('inflation')
+                    if inflation_data and inflation_data.get('data') and inflation_data['data'][0].get('value') is not None:
+                        st.metric("Inflation, consumer prices (annual %)", f"{inflation_data['data'][0]['value']:.2f}% ({inflation_data['data'][0]['date']})")
+                with col3:
+                    unemployment_data = wb_data.get('unemployment')
+                    if unemployment_data and unemployment_data.get('data') and unemployment_data['data'][0].get('value') is not None:
+                        st.metric("Unemployment, total (% of total labor force)", f"{unemployment_data['data'][0]['value']:.2f}% ({unemployment_data['data'][0]['date']})")
 
 if __name__ == "__main__":
     main()
