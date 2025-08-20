@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Union, Callable, Any
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -707,3 +708,251 @@ def create_comprehensive_risk_report(data: pd.DataFrame,
     report['Stress_Testing'] = stress_results
     
     return report
+
+
+class StressTestEngine:
+    """
+    Advanced Stress Testing Engine for Economic Risk Analysis
+    ========================================================
+    
+    Comprehensive stress testing framework with multiple scenario types,
+    sensitivity analysis, and impact assessment capabilities.
+    """
+    
+    def __init__(self):
+        self.scenarios = {}
+        self.models = {}
+        self.results = {}
+        
+    def add_scenario(self, name: str, parameters: Dict[str, float], description: str = ""):
+        """Add a stress testing scenario"""
+        self.scenarios[name] = {
+            'parameters': parameters,
+            'description': description,
+            'results': None
+        }
+        
+    def create_baseline_scenarios(self):
+        """Create standard baseline stress scenarios"""
+        
+        # Economic downturn
+        self.add_scenario(
+            'economic_downturn',
+            {
+                'gdp_shock': -0.15,      # 15% GDP decline
+                'unemployment_rise': 0.08, # 8% unemployment increase
+                'inflation_spike': 0.05,   # 5% inflation increase
+                'fx_depreciation': 0.25,   # 25% currency depreciation
+                'interest_rate_hike': 0.03 # 3% interest rate increase
+            },
+            "Severe economic recession scenario"
+        )
+        
+        # Financial crisis
+        self.add_scenario(
+            'financial_crisis',
+            {
+                'market_crash': -0.40,     # 40% market decline
+                'credit_crunch': 0.60,     # 60% increase in credit spreads
+                'liquidity_crisis': -0.50, # 50% liquidity reduction
+                'bank_failures': 0.15,     # 15% of banks fail
+                'fx_volatility': 2.0       # Double FX volatility
+            },
+            "Systemic financial crisis scenario"
+        )
+        
+        # External shock
+        self.add_scenario(
+            'external_shock',
+            {
+                'commodity_price_drop': -0.30, # 30% commodity price decline
+                'trade_disruption': -0.25,     # 25% trade volume decline
+                'capital_flight': -0.40,       # 40% capital outflow
+                'tourism_collapse': -0.80,     # 80% tourism decline
+                'remittance_drop': -0.35       # 35% remittance decline
+            },
+            "Major external economic shock"
+        )
+        
+        # Climate stress
+        self.add_scenario(
+            'climate_stress',
+            {
+                'agricultural_shock': -0.50,   # 50% agricultural output decline
+                'infrastructure_damage': -0.20, # 20% infrastructure damage
+                'displacement_cost': 0.10,      # 10% GDP in displacement costs
+                'adaptation_spending': 0.05,    # 5% GDP adaptation spending
+                'insurance_claims': 0.08        # 8% GDP in insurance claims
+            },
+            "Severe climate change impact scenario"
+        )
+        
+        # Pandemic scenario
+        self.add_scenario(
+            'pandemic_stress',
+            {
+                'economic_shutdown': -0.25,    # 25% economic activity reduction
+                'health_spending': 0.08,       # 8% GDP additional health spending
+                'unemployment_surge': 0.15,    # 15% unemployment increase
+                'fiscal_expansion': 0.12,      # 12% GDP fiscal stimulus
+                'debt_increase': 0.20          # 20% debt-to-GDP increase
+            },
+            "Global pandemic impact scenario"
+        )
+    
+    def run_stress_test(self, base_data: pd.DataFrame, risk_model, scenario_name: str) -> Dict[str, Any]:
+        """Run stress test for a specific scenario"""
+        
+        if scenario_name not in self.scenarios:
+            raise ValueError(f"Scenario '{scenario_name}' not found")
+        
+        scenario = self.scenarios[scenario_name]
+        parameters = scenario['parameters']
+        
+        # Apply stress to base data
+        stressed_data = base_data.copy()
+        
+        for param, shock in parameters.items():
+            if param in stressed_data.columns:
+                if shock > 0:  # Additive shock
+                    stressed_data[param] = stressed_data[param] + shock
+                else:  # Multiplicative shock
+                    stressed_data[param] = stressed_data[param] * (1 + shock)
+        
+        # Calculate risk metrics under stress
+        if 'returns' in stressed_data.columns:
+            stressed_returns = stressed_data['returns'].dropna()
+            
+            if len(stressed_returns) > 0:
+                stress_metrics = risk_model.calculate_risk_metrics(stressed_returns)
+                
+                # Calculate impact vs baseline
+                baseline_returns = base_data['returns'].dropna()
+                baseline_metrics = risk_model.calculate_risk_metrics(baseline_returns)
+                
+                impact = {}
+                for metric, value in stress_metrics.items():
+                    baseline_value = baseline_metrics.get(metric, 0)
+                    if baseline_value != 0:
+                        impact[f"{metric}_change"] = (value - baseline_value) / abs(baseline_value)
+                    else:
+                        impact[f"{metric}_change"] = value
+                
+                results = {
+                    'scenario_name': scenario_name,
+                    'description': scenario['description'],
+                    'stress_parameters': parameters,
+                    'baseline_metrics': baseline_metrics,
+                    'stressed_metrics': stress_metrics,
+                    'impact_assessment': impact,
+                    'severity_score': self._calculate_severity_score(impact)
+                }
+                
+                self.scenarios[scenario_name]['results'] = results
+                return results
+        
+        return {'error': 'Unable to calculate stress test results'}
+    
+    def run_all_scenarios(self, base_data: pd.DataFrame, risk_model) -> Dict[str, Any]:
+        """Run stress tests for all scenarios"""
+        
+        all_results = {}
+        
+        for scenario_name in self.scenarios.keys():
+            try:
+                results = self.run_stress_test(base_data, risk_model, scenario_name)
+                all_results[scenario_name] = results
+            except Exception as e:
+                all_results[scenario_name] = {'error': str(e)}
+        
+        # Calculate aggregate stress metrics
+        severity_scores = []
+        for results in all_results.values():
+            if 'severity_score' in results:
+                severity_scores.append(results['severity_score'])
+        
+        aggregate_metrics = {
+            'total_scenarios': len(self.scenarios),
+            'successful_tests': len([r for r in all_results.values() if 'error' not in r]),
+            'average_severity': np.mean(severity_scores) if severity_scores else 0,
+            'max_severity': max(severity_scores) if severity_scores else 0,
+            'stress_test_summary': all_results
+        }
+        
+        return aggregate_metrics
+    
+    def _calculate_severity_score(self, impact: Dict[str, float]) -> float:
+        """Calculate overall severity score from impact metrics"""
+        
+        # Weight different metrics by importance
+        weights = {
+            'var_change': 0.3,
+            'cvar_change': 0.25,
+            'volatility_change': 0.2,
+            'max_drawdown_change': 0.15,
+            'sharpe_ratio_change': -0.1  # Negative weight (lower is worse)
+        }
+        
+        severity = 0
+        total_weight = 0
+        
+        for metric, change in impact.items():
+            if metric in weights:
+                severity += abs(change) * weights[metric]
+                total_weight += abs(weights[metric])
+        
+        return severity / total_weight if total_weight > 0 else 0
+    
+    def generate_stress_report(self, results: Dict[str, Any]) -> str:
+        """Generate comprehensive stress testing report"""
+        
+        report = []
+        report.append("STRESS TESTING REPORT")
+        report.append("=" * 50)
+        report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report.append("")
+        
+        if 'stress_test_summary' in results:
+            summary = results['stress_test_summary']
+            
+            report.append("EXECUTIVE SUMMARY")
+            report.append("-" * 20)
+            report.append(f"Total Scenarios Tested: {results['total_scenarios']}")
+            report.append(f"Successful Tests: {results['successful_tests']}")
+            report.append(f"Average Severity Score: {results['average_severity']:.3f}")
+            report.append(f"Maximum Severity Score: {results['max_severity']:.3f}")
+            report.append("")
+            
+            # Scenario details
+            for scenario_name, scenario_results in summary.items():
+                if 'error' not in scenario_results:
+                    report.append(f"SCENARIO: {scenario_name.upper()}")
+                    report.append("-" * 30)
+                    report.append(f"Description: {scenario_results['description']}")
+                    report.append(f"Severity Score: {scenario_results['severity_score']:.3f}")
+                    report.append("")
+                    
+                    # Key impacts
+                    impact = scenario_results['impact_assessment']
+                    report.append("Key Impact Metrics:")
+                    for metric, change in impact.items():
+                        report.append(f"  {metric}: {change:+.2%}")
+                    report.append("")
+        
+        return "\n".join(report)
+    
+    def export_results(self, results: Dict[str, Any], filepath: str = None) -> str:
+        """Export stress test results to file"""
+        
+        report_content = self.generate_stress_report(results)
+        
+        if filepath:
+            with open(filepath, 'w') as f:
+                f.write(report_content)
+            return f"Report exported to {filepath}"
+        
+        return report_content
+
+
+# Alias for backwards compatibility
+StressTesting = StressTestEngine

@@ -66,18 +66,29 @@ available_notebooks = runner.list_notebooks()
 with st.sidebar:
     st.header("⚙️ Controls")
     
-    # Create a mapping from display name to file path
-    notebook_display_names = {v['name']: k for k, v in available_notebooks.items()}
+    # Handle both list and dict formats
+    if isinstance(available_notebooks, list):
+        notebook_options = available_notebooks
+        selected_notebook_name = st.selectbox(
+            "**Select a Notebook**",
+            options=notebook_options
+        )
+        selected_notebook_path = selected_notebook_name
+    else:
+        # Create a mapping from display name to file path
+        notebook_display_names = {v['name']: k for k, v in available_notebooks.items()}
+        
+        selected_notebook_name = st.selectbox(
+            "**Select a Notebook**",
+            options=list(notebook_display_names.keys())
+        )
+        selected_notebook_path = notebook_display_names[selected_notebook_name]
     
-    selected_notebook_name = st.selectbox(
-        "**Select a Notebook**",
-        options=list(notebook_display_names.keys())
-    )
-    
-    selected_notebook_path = notebook_display_names.get(selected_notebook_name)
-
-    if selected_notebook_path:
-        st.markdown(f"**Description:** {available_notebooks[selected_notebook_path]['description']}")
+    # Display notebook metadata if available
+    if isinstance(available_notebooks, dict) and selected_notebook_path in available_notebooks:
+        st.markdown(f"**Description:** {available_notebooks[selected_notebook_path].get('description', 'No description available')}")
+    else:
+        st.markdown(f"**Selected:** {selected_notebook_name}")
 
         # --- Dynamic Parameter Form ---
         with st.form(key="notebook_params_form"):
