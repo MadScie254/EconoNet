@@ -26,6 +26,7 @@ from src.utils.plotting import (
     create_risk_dashboard, create_monte_carlo_paths, create_distribution_plot,
     create_correlation_heatmap, create_time_series_plot
 )
+from src.api_integration import DataCleaner
 
 # Page configuration
 st.set_page_config(
@@ -217,7 +218,7 @@ def render_risk_sidebar():
     
     return config
 
-def generate_sample_returns_data(n_assets=5, n_periods=252):
+def get_sample_data(data_type: str = "Sample Portfolio Returns", n_assets: int = 5, n_periods: int = 1000) -> pd.DataFrame:
     """Generate sample financial returns data"""
     np.random.seed(42)
     
@@ -243,6 +244,12 @@ def generate_sample_returns_data(n_assets=5, n_periods=252):
     # Create DataFrame
     dates = pd.date_range(start='2020-01-01', periods=n_periods, freq='D')
     returns_df = pd.DataFrame(returns, index=dates, columns=asset_names)
+    
+    if "Prices" in data_type:
+        # Convert returns to prices
+        initial_prices = np.random.uniform(50, 200, n_assets)
+        prices_df = (1 + returns_df).cumprod() * initial_prices
+        return prices_df
     
     return returns_df
 
@@ -277,38 +284,42 @@ def main():
         )
     
     with col2:
-        use_sample = st.button("📈 Generate Sample Data", help="Create sample financial returns data for demonstration")
-    
-    # Load data
-    if uploaded_file is not None:
+        data_source = st.selectbox(
+            "Or select sample data",
+            ["None", "Sample Portfolio Returns", "Sample Stock Prices"],
+            index=0
+        )
+
+    # Load and clean data
+    data = None
+    if uploaded_file:
         try:
             if uploaded_file.name.endswith('.csv'):
-                data = pd.read_csv(uploaded_file)
+                raw_data = pd.read_csv(uploaded_file)
             else:
-                data = pd.read_excel(uploaded_file)
+                raw_data = pd.read_excel(uploaded_file)
             
-            # Try to detect date column
-            date_cols = [col for col in data.columns if 'date' in col.lower() or 'time' in col.lower()]
-            if date_cols:
-                data[date_cols[0]] = pd.to_datetime(data[date_cols[0]])
-                data = data.set_index(date_cols[0])
+            # Clean the data using the new cleaner
+            data = DataCleaner.clean_dataframe(raw_data)
             
-            st.success(f"✅ Data loaded: {len(data)} periods, {len(data.columns)} assets")
+            # Try to set a date index
+            date_col = [col for col in data.columns if 'date' in col.lower()]
+            if date_col:
+                data[date_col[0]] = pd.to_datetime(data[date_col[0]], errors='coerce')
+                data = data.set_index(date_col[0])
+            
+            st.success("✅ Data loaded and cleaned successfully!")
             
         except Exception as e:
-            st.error(f"❌ Error loading data: {str(e)}")
-            data = None
+            st.error(f"Error loading or cleaning data: {e}")
+            return
     
-    elif use_sample:
-        data = generate_sample_returns_data()
-        st.success("✅ Sample returns data generated")
+    elif data_source != "None":
+        data = get_sample_data(data_source)
+        st.info(f"Loaded {data_source}")
     
-    else:
-        data = None
-        st.info("👆 Please upload returns data or generate sample data")
-    
+    # Data preview
     if data is not None:
-        # Data preview
         st.markdown("### 📋 Data Preview")
         
         tab1, tab2 = st.tabs(["📊 Raw Data", "📈 Visualization"])
