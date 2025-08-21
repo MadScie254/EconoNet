@@ -32,14 +32,8 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-try:
-    from utils.plotting import ECONET_COLORS, create_time_series_plot
-    from models.forecasting import EnsembleForecaster
-    from models.risk import VaRCalculator, MonteCarloSimulator
-    from api_integration import DataCleaner
-except ImportError as e:
-    st.error(f"Import error: {e}. Make sure the src directory is in the Python path.")
-    st.stop()
+# Define default colors for compatibility
+ECONET_COLORS = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']
 
 class MarketIntelligenceEngine:
     """
@@ -708,15 +702,16 @@ def main():
     uploaded_file = st.sidebar.file_uploader("Upload CSV or Excel file", type=["csv", "xlsx"])
 
     if uploaded_file:
-        data_cleaner = DataCleaner()
+        # data_cleaner = DataCleaner()  # Commented out for now
         try:
             if uploaded_file.name.endswith('.csv'):
                 df = pd.read_csv(uploaded_file)
             else:
                 df = pd.read_excel(uploaded_file)
             
-            cleaned_df = data_cleaner.clean_dataframe(df)
-            st.sidebar.success("File uploaded and cleaned successfully!")
+            # cleaned_df = data_cleaner.clean_dataframe(df)  # Commented out for now
+            cleaned_df = df  # Use original dataframe for now
+            st.sidebar.success("File uploaded successfully!")
             st.session_state['market_data'] = cleaned_df
         except Exception as e:
             st.sidebar.error(f"Error processing file: {e}")
@@ -850,7 +845,7 @@ def main():
         with col2:
             if st.button("🔄 Generate Sentiment Analysis", type="primary"):
                 with st.spinner("Analyzing economic sentiment..."):
-                    sentiment_data = market_engine.get_market_sentiment(economic_keywords)
+                    sentiment_data = engine.get_market_sentiment(economic_keywords)
                     st.session_state.sentiment_data = sentiment_data
                     st.success("✅ Sentiment analysis completed!")
         
@@ -867,7 +862,7 @@ def main():
         with col2:
             if st.button("🎯 Analyze Policy Impact", type="primary"):
                 with st.spinner("Analyzing policy impacts..."):
-                    policy_data = market_engine.analyze_policy_impact(policy_type, data)
+                    policy_data = engine.analyze_policy_impact(policy_type, data)
                     st.session_state.policy_data = policy_data
                     st.success("✅ Policy analysis completed!")
         
@@ -884,7 +879,7 @@ def main():
         with col2:
             if st.button("📊 Generate Market Signals", type="primary"):
                 with st.spinner("Generating market signals..."):
-                    signals_data = market_engine.generate_market_signals(data, lookback_period)
+                    signals_data = engine.generate_market_signals(data, lookback_period)
                     st.session_state.signals_data = signals_data
                     st.success("✅ Market signals generated!")
         
@@ -901,7 +896,7 @@ def main():
         with col2:
             if st.button("🔍 Analyze Correlations", type="primary"):
                 with st.spinner("Analyzing market correlations..."):
-                    corr_data = market_engine.calculate_market_correlations(data)
+                    corr_data = engine.calculate_market_correlations(data)
                     st.session_state.corr_data = corr_data
                     st.success("✅ Correlation analysis completed!")
         

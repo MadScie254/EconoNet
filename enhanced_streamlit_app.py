@@ -721,20 +721,21 @@ def main():
             # Run forecast button
             if st.button("🚀 Generate Forecast", type="primary"):
                 with st.spinner(f"Running {selected_model} model..."):
-                # Simulate forecast generation
-                import time
-                time.sleep(2)
-                
-                # Create sample forecast data
-                dates = pd.date_range(start=datetime.now(), periods=forecast_horizon, freq='M')
-                forecast_data = pd.DataFrame({
-                    'Forecast': np.random.normal(5.0, 1.0, forecast_horizon),
-                    'Lower_Bound': np.random.normal(3.0, 0.5, forecast_horizon),
-                    'Upper_Bound': np.random.normal(7.0, 0.5, forecast_horizon)
-                }, index=dates)
-                
-                # Display forecast
-                fig = go.Figure()                    fig.add_trace(go.Scatter(
+                    # Simulate forecast generation
+                    import time
+                    time.sleep(2)
+                    
+                    # Create sample forecast data
+                    dates = pd.date_range(start=datetime.now(), periods=forecast_horizon, freq='M')
+                    forecast_data = pd.DataFrame({
+                        'Forecast': np.random.normal(5.0, 1.0, forecast_horizon),
+                        'Lower_Bound': np.random.normal(3.0, 0.5, forecast_horizon),
+                        'Upper_Bound': np.random.normal(7.0, 0.5, forecast_horizon)
+                    }, index=dates)
+                    
+                    # Display forecast
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
                         x=forecast_data.index,
                         y=forecast_data['Forecast'],
                         mode='lines+markers',
