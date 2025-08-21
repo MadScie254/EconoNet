@@ -28,6 +28,17 @@ import time
 
 warnings.filterwarnings('ignore')
 
+# Plotly compatibility fix for range objects
+def fix_plotly_data(data):
+    """Convert range/arange objects to lists for Plotly compatibility"""
+    if isinstance(data, range):
+        return list(data)
+    elif isinstance(data, np.ndarray):
+        return data.tolist()
+    elif hasattr(data, 'tolist'):
+        return data.tolist()
+    return data
+
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent))
 
