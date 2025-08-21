@@ -36,8 +36,9 @@ try:
     from utils.plotting import ECONET_COLORS, create_time_series_plot
     from models.forecasting import EnsembleForecaster
     from models.risk import VaRCalculator, MonteCarloSimulator
+    from api_integration import DataCleaner
 except ImportError as e:
-    st.error(f"Import error: {e}")
+    st.error(f"Import error: {e}. Make sure the src directory is in the Python path.")
     st.stop()
 
 class MarketIntelligenceEngine:
@@ -695,26 +696,33 @@ def create_market_signals_display(signals_data: Dict[str, Any]) -> None:
         
         st.plotly_chart(fig, use_container_width=True)
 
+# Main app
 def main():
-    """Main Market Intelligence page"""
+    """Main application function"""
     
-    st.title("📈 Market Intelligence Hub")
-    st.markdown("""
-    **Real-time economic market analysis and intelligence platform**
-    
-    Advanced market intelligence capabilities:
-    - 📰 Economic sentiment tracking and analysis
-    - 🏛️ Policy impact assessment and simulation
-    - 🎯 Market signals and trading recommendations
-    - 🔗 Cross-market correlation analysis
-    - 📊 Real-time market monitoring
-    """)
-    
-    # Initialize market intelligence engine
-    if 'market_engine' not in st.session_state:
-        st.session_state.market_engine = MarketIntelligenceEngine()
-    
-    market_engine = st.session_state.market_engine
+    st.title("📈 Market Intelligence")
+    st.markdown("Real-time market analysis, sentiment tracking, and policy impact assessment.")
+
+    # File uploader for market analysis
+    st.sidebar.header("Upload Data for Analysis")
+    uploaded_file = st.sidebar.file_uploader("Upload CSV or Excel file", type=["csv", "xlsx"])
+
+    if uploaded_file:
+        data_cleaner = DataCleaner()
+        try:
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+            
+            cleaned_df = data_cleaner.clean_dataframe(df)
+            st.sidebar.success("File uploaded and cleaned successfully!")
+            st.session_state['market_data'] = cleaned_df
+        except Exception as e:
+            st.sidebar.error(f"Error processing file: {e}")
+
+    # Initialize engine
+    engine = MarketIntelligenceEngine()
     
     # Sidebar controls
     st.sidebar.header("🎛️ Market Intelligence Settings")
