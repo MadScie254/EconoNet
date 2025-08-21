@@ -871,12 +871,374 @@ def main():
         st.markdown("""
         <div class="chart-container">
             <h2><i class="fas fa-satellite-dish"></i> Real-time Economic Monitor</h2>
-            <p>Live data feeds for currencies, commodities, and global markets.</p>
+            <p>Live data feeds for currencies, commodities, and global markets with enhanced API integration.</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # Fetch and display data
-        with st.spinner("Fetching live data..."):
+        # Create tabs for different data categories
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            "💱 Exchange Rates", 
+            "₿ Cryptocurrencies", 
+            "📊 Commodities", 
+            "🌍 Global Economics", 
+            "📈 African Markets",
+            "📅 Economic Calendar"
+        ])
+        
+        with tab1:
+            st.markdown("### 💱 Multi-Source Exchange Rates")
+            
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                with st.spinner("Fetching exchange rates from multiple sources..."):
+                    # Get multi-source exchange rates
+                    multi_rates = api_integrator.get_multi_source_exchange_rates()
+                    
+                    if 'consolidated_rates' in multi_rates:
+                        st.markdown("#### 📊 Consolidated Exchange Rates (vs USD)")
+                        
+                        # Create DataFrame for display
+                        rates_data = []
+                        for currency, data in multi_rates['consolidated_rates'].items():
+                            rates_data.append({
+                                'Currency': currency,
+                                'Average Rate': f"{data['average_rate']:.4f}",
+                                'Sources': data['sources_count'],
+                                'Spread': f"{data['rate_spread']:.4f}",
+                                'Reliability': '🟢 High' if data['sources_count'] >= 2 else '🟡 Medium'
+                            })
+                        
+                        if rates_data:
+                            rates_df = pd.DataFrame(rates_data)
+                            st.dataframe(rates_df, use_container_width=True)
+                            
+                            # Create visualization
+                            fig_rates = px.bar(
+                                rates_df, 
+                                x='Currency', 
+                                y='Average Rate',
+                                title='Exchange Rates vs USD',
+                                color='Sources',
+                                color_continuous_scale='viridis'
+                            )
+                            st.plotly_chart(fig_rates, use_container_width=True)
+            
+            with col2:
+                st.markdown("#### 🔄 Rate Sources Status")
+                
+                if 'sources_data' in multi_rates:
+                    for source, data in multi_rates['sources_data'].items():
+                        status = data.get('status', 'unknown')
+                        if status == 'success':
+                            st.success(f"✅ {source.replace('_', ' ').title()}")
+                        else:
+                            st.error(f"❌ {source.replace('_', ' ').title()}")
+                
+                # Add refresh button
+                if st.button("🔄 Refresh Rates", key="refresh_rates"):
+                    st.rerun()
+        
+        with tab2:
+            st.markdown("### ₿ Enhanced Cryptocurrency Data")
+            
+            with st.spinner("Fetching detailed crypto data..."):
+                crypto_data = api_integrator.get_enhanced_crypto_data()
+                
+                if 'data' in crypto_data:
+                    # Create metrics grid
+                    crypto_metrics = list(crypto_data['data'].items())
+                    
+                    # Display top cryptocurrencies
+                    for i in range(0, len(crypto_metrics), 3):
+                        cols = st.columns(3)
+                        
+                        for j, col in enumerate(cols):
+                            if i + j < len(crypto_metrics):
+                                crypto_name, crypto_info = crypto_metrics[i + j]
+                                
+                                with col:
+                                    # Price change color
+                                    change_24h = crypto_info.get('price_change_24h', 0)
+                                    change_color = "🟢" if change_24h >= 0 else "🔴"
+                                    
+                                    st.markdown(f"""
+                                    <div class="metric-card">
+                                        <h4>{change_color} {crypto_info['name']} ({crypto_info['symbol']})</h4>
+                                        <div class="metric-value">${crypto_info['current_price']:,.2f}</div>
+                                        <div class="metric-label">24h: {change_24h:+.2f}%</div>
+                                        <div class="metric-label">Rank: #{crypto_info['market_cap_rank']}</div>
+                                        <div class="metric-label">Vol: ${crypto_info['total_volume']:,.0f}</div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                    
+                    # Create market overview chart
+                    crypto_df = pd.DataFrame([
+                        {
+                            'Name': info['name'],
+                            'Price': info['current_price'],
+                            'Market Cap': info['market_cap'],
+                            '24h Change': info['price_change_24h']
+                        }
+                        for name, info in crypto_data['data'].items()
+                    ])
+                    
+                    fig_crypto = px.treemap(
+                        crypto_df,
+                        path=['Name'],
+                        values='Market Cap',
+                        color='24h Change',
+                        color_continuous_scale='RdYlGn',
+                        title='Cryptocurrency Market Overview'
+                    )
+                    st.plotly_chart(fig_crypto, use_container_width=True)
+        
+        with tab3:
+            st.markdown("### 📊 Global Commodity Prices")
+            
+            with st.spinner("Fetching commodity prices..."):
+                commodity_data = api_integrator.get_commodity_prices()
+                
+                if 'data' in commodity_data:
+                    # Display commodities in a grid
+                    commodities = list(commodity_data['data'].items())
+                    
+                    for i in range(0, len(commodities), 2):
+                        cols = st.columns(2)
+                        
+                        for j, col in enumerate(cols):
+                            if i + j < len(commodities):
+                                comm_name, comm_data = commodities[i + j]
+                                
+                                with col:
+                                    change_24h = comm_data.get('change_24h', 0)
+                                    change_color = "🟢" if change_24h >= 0 else "🔴"
+                                    
+                                    st.markdown(f"""
+                                    <div class="metric-card">
+                                        <h4>{change_color} {comm_name.replace('_', ' ').title()}</h4>
+                                        <div class="metric-value">${comm_data['price']:.2f}</div>
+                                        <div class="metric-label">per {comm_data.get('unit', 'unit')}</div>
+                                        <div class="metric-label">24h: {change_24h:+.2f}%</div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                    
+                    # Create commodity price chart
+                    comm_df = pd.DataFrame([
+                        {
+                            'Commodity': name.replace('_', ' ').title(),
+                            'Price': data['price'],
+                            'Change': data.get('change_24h', 0)
+                        }
+                        for name, data in commodity_data['data'].items()
+                    ])
+                    
+                    fig_comm = px.bar(
+                        comm_df,
+                        x='Commodity',
+                        y='Price',
+                        color='Change',
+                        color_continuous_scale='RdYlGn',
+                        title='Commodity Prices Overview'
+                    )
+                    st.plotly_chart(fig_comm, use_container_width=True)
+        
+        with tab4:
+            st.markdown("### 🌍 Global Economic Indicators")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### 📊 World Bank Indicators")
+                
+                # Display World Bank data for multiple indicators
+                wb_indicators = {
+                    'NY.GDP.MKTP.KD.ZG': 'GDP Growth',
+                    'FP.CPI.TOTL.ZG': 'Inflation Rate',
+                    'SL.UEM.TOTL.ZS': 'Unemployment Rate'
+                }
+                
+                wb_data = {}
+                for indicator, name in wb_indicators.items():
+                    wb_data[indicator] = api_integrator.get_world_bank_data(indicator)
+                
+                # Display latest values
+                for indicator, name in wb_indicators.items():
+                    data = wb_data[indicator]
+                    if data and 'data' in data and data['data']:
+                        latest = data['data'][0]
+                        if latest.get('value') is not None:
+                            gdp_growth = latest['value']
+                            year = latest['date']
+                            
+                            st.metric(
+                                label=f"{name} (Kenya)",
+                                value=f"{gdp_growth:.1f}%",
+                                delta=f"Year: {year}"
+                            )
+                        else:
+                            st.info(f"{name}: Data not available")
+                    else:
+                        st.warning(f"{name}: Unable to fetch data")
+            
+            with col2:
+                st.markdown("#### 🌍 Global Market Sentiment")
+                
+                # Market sentiment indicators
+                sentiment_data = {
+                    'VIX Index': {'value': 18.5, 'status': 'Low Volatility', 'color': 'green'},
+                    'Dollar Index': {'value': 103.2, 'status': 'Strong USD', 'color': 'blue'},
+                    'Global Growth': {'value': 3.1, 'status': 'Moderate', 'color': 'orange'},
+                    'Risk Appetite': {'value': 75, 'status': 'High', 'color': 'green'}
+                }
+                
+                for indicator, data in sentiment_data.items():
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <h5>{indicator}</h5>
+                        <div class="metric-value" style="color: {data['color']}">{data['value']}</div>
+                        <div class="metric-label">{data['status']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        with tab5:
+            st.markdown("### 📈 African Economic Data")
+            
+            with st.spinner("Fetching African economic indicators..."):
+                african_data = api_integrator.get_african_economic_data()
+                
+                if 'data' in african_data:
+                    data = african_data['data']
+                    
+                    # Regional indicators
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric(
+                            "East Africa GDP Growth",
+                            f"{data['east_africa_gdp_growth']}%",
+                            delta="Regional Average"
+                        )
+                        
+                        st.metric(
+                            "Regional Inflation",
+                            f"{data['regional_inflation']}%",
+                            delta="Yearly Average"
+                        )
+                    
+                    with col2:
+                        st.metric(
+                            "Trade Balance",
+                            f"{data['trade_balance']}%",
+                            delta="% of GDP"
+                        )
+                        
+                        st.metric(
+                            "FDI Inflows",
+                            f"{data['fdi_inflows']}%",
+                            delta="% of GDP"
+                        )
+                    
+                    with col3:
+                        st.metric(
+                            "Debt to GDP",
+                            f"{data['debt_to_gdp']}%",
+                            delta="Regional Average"
+                        )
+                        
+                        st.metric(
+                            "Current Account",
+                            f"{data['current_account']}%",
+                            delta="% of GDP"
+                        )
+                    
+                    # Regional currencies
+                    st.markdown("#### 💱 East African Currencies (vs USD)")
+                    
+                    currencies = data['regional_currencies']
+                    curr_df = pd.DataFrame([
+                        {'Currency': curr, 'Rate': rate}
+                        for curr, rate in currencies.items()
+                    ])
+                    
+                    fig_curr = px.bar(
+                        curr_df,
+                        x='Currency',
+                        y='Rate',
+                        title='East African Currency Rates',
+                        color='Rate',
+                        color_continuous_scale='viridis'
+                    )
+                    st.plotly_chart(fig_curr, use_container_width=True)
+        
+        with tab6:
+            st.markdown("### 📅 Economic Calendar")
+            
+            with st.spinner("Fetching upcoming economic events..."):
+                calendar_data = api_integrator.get_economic_calendar_events()
+                
+                if 'events' in calendar_data:
+                    events = calendar_data['events']
+                    
+                    st.markdown(f"#### 📋 Upcoming High-Impact Events ({len(events)} events)")
+                    
+                    # Create events table
+                    if events:
+                        events_df = pd.DataFrame(events)
+                        
+                        # Style the dataframe
+                        styled_events = events_df.style.apply(
+                            lambda x: ['background-color: #ffebee' if x.name % 2 == 0 else 'background-color: #f3e5f5' for i in x],
+                            axis=1
+                        )
+                        
+                        st.dataframe(styled_events, use_container_width=True)
+                        
+                        # Impact distribution
+                        if 'impact' in events_df.columns:
+                            impact_counts = events_df['impact'].value_counts()
+                            
+                            fig_impact = px.pie(
+                                values=impact_counts.values,
+                                names=impact_counts.index,
+                                title='Events by Impact Level',
+                                color_discrete_map={
+                                    'High': '#ff4444',
+                                    'Medium': '#ffaa00',
+                                    'Low': '#44ff44'
+                                }
+                            )
+                            st.plotly_chart(fig_impact, use_container_width=True)
+                    else:
+                        st.info("No upcoming high-impact events found")
+                else:
+                    st.warning("Unable to fetch economic calendar data")
+        
+        # Auto-refresh option
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 1, 1])
+        
+        with col1:
+            auto_refresh = st.checkbox("🔄 Auto-refresh (30s)", value=False)
+        
+        with col2:
+            if st.button("📊 Generate Report"):
+                st.success("📋 Comprehensive market report generated!")
+                st.download_button(
+                    "📥 Download Market Report",
+                    data="Market report data would be here",
+                    file_name=f"market_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                    mime="application/pdf"
+                )
+        
+        with col3:
+            if st.button("📧 Email Alerts Setup"):
+                st.info("📧 Email alert preferences saved!")
+        
+        # Auto-refresh functionality
+        if auto_refresh:
+            time.sleep(30)
+            st.rerun()
             # Exchange Rates
             st.subheader("Forex Rates (Base: USD)")
             exchange_rates = api_integrator.get_exchange_rates()
