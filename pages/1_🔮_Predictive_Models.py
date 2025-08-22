@@ -296,13 +296,22 @@ def run_forecast_model(data, target_col, model_type, forecast_periods=12):
         st.error("Insufficient historical data for forecasting")
         return None, None
     
-    # Generate forecast dates
+    # Generate forecast dates - Fixed timestamp arithmetic
     last_date = historical_data.index[-1]
-    forecast_dates = pd.date_range(
-        start=last_date + pd.DateOffset(months=1),
-        periods=forecast_periods,
-        freq='M'
-    )
+    # Use pd.offsets.MonthBegin for proper timestamp arithmetic
+    try:
+        forecast_dates = pd.date_range(
+            start=last_date + pd.offsets.MonthBegin(1),
+            periods=forecast_periods,
+            freq='M'
+        )
+    except:
+        # Fallback method for timestamp arithmetic
+        forecast_dates = pd.date_range(
+            start=pd.to_datetime(last_date) + pd.Timedelta(days=30),
+            periods=forecast_periods,
+            freq='M'
+        )
     
     # Model-specific forecasting
     last_value = historical_data.iloc[-1]
