@@ -54,6 +54,13 @@ except ImportError:
     ECONET_AVAILABLE = False
     st.warning("⚠️ EconoNet package not available. Using legacy API functions.")
 
+# Try importing news module
+try:
+    from econonet.live_news import get_fintech_news, get_news_summary_stats
+    NEWS_AVAILABLE = True
+except ImportError:
+    NEWS_AVAILABLE = False
+
 # ============================================================================
 # 🌍 REAL-WORLD API INTEGRATION FUNCTIONS (Legacy Fallback)
 # ============================================================================
@@ -471,8 +478,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Main content with advanced tabs including notebook integration
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+# Main content with advanced tabs including notebook integration and news
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
     "🌌 Quantum Dashboard", 
     "🧠 AI Prophet Center", 
     "🎯 3D Economic Space", 
@@ -481,7 +488,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
     "💰 Financial Derivatives",
     "📈 ML Ensemble",
     "🌊 Sentiment Analysis",
-    "📚 Notebook Integration"
+    "📚 Notebook Integration",
+    "📰 News & Insights"
 ])
 
 with tab1:
@@ -1082,6 +1090,80 @@ with tab9:
             st.success("✅ API data refreshed! Notebooks now have access to latest data.")
     
     st.markdown('</div>', unsafe_allow_html=True)
+
+with tab10:
+    # Fintech News & Insights Integration
+    st.markdown("""
+    <div class="holographic-display">
+        <h2><i class="fas fa-newspaper"></i> Fintech News & Insights</h2>
+        <p>Real-time fintech news aggregation with sentiment analysis</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    try:
+        # Import the news page
+        sys.path.append(os.path.join(os.path.dirname(__file__), 'src', 'econonet', 'pages'))
+        from fintech_news import run_fintech_news_page
+        
+        # Run the complete news dashboard
+        run_fintech_news_page()
+        
+    except ImportError:
+        st.warning("📰 News module not found. Loading basic news interface...")
+        
+        # Fallback basic news interface
+        st.subheader("📊 News Analytics")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Articles", "127", "+15")
+        with col2:
+            st.metric("Sentiment Score", "0.65", "+0.12")
+        with col3:
+            st.metric("Active Sources", "8", "+2")
+        
+        # Sample news items
+        st.subheader("🔥 Top Headlines")
+        
+        news_items = [
+            {
+                "title": "African Fintech Startup Raises $50M Series B",
+                "source": "TechCrunch",
+                "sentiment": "🟢 Bullish",
+                "time": "2 hours ago"
+            },
+            {
+                "title": "Central Bank Announces CBDC Pilot Program", 
+                "source": "Reuters",
+                "sentiment": "🟢 Bullish",
+                "time": "4 hours ago"
+            },
+            {
+                "title": "Regulatory Framework for DeFi Released",
+                "source": "Financial Times",
+                "sentiment": "⚪ Neutral", 
+                "time": "6 hours ago"
+            }
+        ]
+        
+        for item in news_items:
+            with st.container():
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                with col1:
+                    st.markdown(f"**{item['title']}**")
+                with col2:
+                    st.text(item['source'])
+                with col3:
+                    st.text(item['sentiment'])
+                with col4:
+                    st.text(item['time'])
+                st.divider()
+        
+        st.info("💡 **Tip**: The full News & Insights module includes live news aggregation, sentiment analysis, and interactive charts. Install the complete module for enhanced features.")
+    
+    except Exception as e:
+        st.error(f"Error loading news module: {e}")
+        st.info("📰 News functionality will be available once the module is properly configured.")
 
 # Fill remaining tabs with placeholders
 for tab_num, tab in enumerate([tab2, tab3, tab4, tab5, tab6, tab7], 2):

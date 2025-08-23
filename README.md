@@ -14,6 +14,13 @@ EconoNet is a comprehensive economic analysis platform that unifies live data st
 - **Smart Caching**: Configurable TTL caching with SQLite backend for optimal performance
 - **Graceful Fallbacks**: Automatic synthetic data generation when APIs are unavailable
 
+### **📰 News & Insights Module (NEW!)**
+- **5 News Sources**: GNews, Yahoo Finance, CryptoPanic, Reuters, BBC Business
+- **Sentiment Analysis**: TextBlob-powered bullish/bearish/neutral classification with emoji indicators
+- **Interactive Dashboard**: Filterable news grid with sentiment timelines and analytics
+- **Token-Free APIs**: Complete news aggregation without API keys or authentication
+- **Fallback System**: Synthetic news generation when external APIs are unavailable
+
 ### **🎛️ Operation Modes**
 - **Offline Mode**: High-quality synthetic data for development and testing
 - **Live Mode**: Real-time API data with intelligent fallbacks
@@ -24,11 +31,13 @@ EconoNet is a comprehensive economic analysis platform that unifies live data st
 - **Real vs Synthetic Overlays**: Clear distinction between live and simulated data
 - **Risk Alert Cards**: Dynamic risk indicators with threshold monitoring
 - **Provenance Footers**: Complete data lineage and source tracking
+- **News Analytics**: Timeline charts, category distributions, source activity monitoring
 
 ### **🚀 Interactive Dashboards**
-- **Ultra Dashboard**: Quantum-themed advanced analytics interface
+- **Ultra Dashboard**: Quantum-themed advanced analytics interface with News & Insights tab
 - **Immersive Dashboard**: Full-screen economic intelligence center  
 - **Enhanced Streamlit App**: Comprehensive modeling and risk analysis
+- **Fintech News Page**: Dedicated news aggregation and sentiment analysis dashboard
 
 ### **⚡ Core Capabilities**
 - **Interactive Dashboard**: Streamlit-based interfaces for seamless navigation and analysis
@@ -36,6 +45,7 @@ EconoNet is a comprehensive economic analysis platform that unifies live data st
 - **Predictive Modeling**: ARIMA, VAR, and custom time-series forecasting models
 - **Financial Risk Analysis**: VaR, CVaR, Monte Carlo simulations, and stress testing
 - **Notebook Integration**: Execute Jupyter notebooks with live dataframe passing
+- **Real-Time News Intelligence**: Live fintech news with sentiment analysis and trend tracking
 
 ## 🏗️ Architecture
 
@@ -45,9 +55,13 @@ src/econonet/
 ├── __init__.py           # Unified API exports
 ├── config.py             # Configuration management
 ├── live_apis.py          # 8 API adapters with fallbacks
+├── live_news.py          # News aggregation module (NEW!)
 ├── utils.py              # Shared utilities
-└── visual/               # Visual components
-    ├── sentiment_radar.py
+├── visual/               # Visual components
+│   ├── sentiment_radar.py
+│   └── news_cards.py     # News visualization components (NEW!)
+└── pages/
+    └── fintech_news.py   # News dashboard page (NEW!)
     ├── provenance_footer.py
     └── real_vs_synthetic.py
 ```
