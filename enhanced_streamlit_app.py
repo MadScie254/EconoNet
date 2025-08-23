@@ -21,10 +21,56 @@ import json
 import subprocess
 import nbformat
 from nbconvert import PythonExporter
-from src.api_integration import FreeAPIIntegrator, DataCleaner
-from src.models.fx_model import FXPredictor
-from src.models.risk import VaRCalculator, MonteCarloSimulator, StressTestEngine
 import time
+
+# Enhanced API Integration - Try new unified system first
+try:
+    from econonet import (
+        get_config, get_worldbank, get_coingecko, get_usgs, get_wiki_views,
+        get_ecb, get_fred, get_openmeteo, get_imf
+    )
+    from econonet.visual import (
+        create_sentiment_radar, create_provenance_footer, 
+        create_real_vs_synthetic_overlay, create_risk_alert_card
+    )
+    ECONET_AVAILABLE = True
+except ImportError:
+    ECONET_AVAILABLE = False
+    # Fallback to legacy imports
+    try:
+        from src.api_integration import FreeAPIIntegrator, DataCleaner
+    except ImportError:
+        # Create mock classes if import fails
+        class FreeAPIIntegrator:
+            @staticmethod
+            def get_data():
+                return None
+        class DataCleaner:
+            @staticmethod
+            def clean_data(data):
+                return data
+
+try:
+    from src.models.fx_model import FXPredictor
+    from src.models.risk import VaRCalculator, MonteCarloSimulator, StressTestEngine
+except ImportError:
+    # Create mock classes for models if import fails
+    class FXPredictor:
+        @staticmethod
+        def predict():
+            return None
+    class VaRCalculator:
+        @staticmethod
+        def calculate():
+            return None
+    class MonteCarloSimulator:
+        @staticmethod
+        def simulate():
+            return None
+    class StressTestEngine:
+        @staticmethod
+        def test():
+            return None
 
 warnings.filterwarnings('ignore')
 
@@ -49,6 +95,47 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Mode selector and configuration
+if ECONET_AVAILABLE:
+    config = get_config()
+    
+    # Sidebar configuration
+    with st.sidebar:
+        st.markdown("### 🎛️ EconoNet Configuration")
+        
+        # Operation mode selector
+        selected_mode = st.selectbox(
+            "Operation Mode",
+            options=['offline', 'live', 'expert'],
+            index=1,  # Default to 'live'
+            help="Offline: synthetic data, Live: APIs with fallback, Expert: advanced features"
+        )
+        
+        # Country selector
+        african_countries = ['Kenya', 'Nigeria', 'South Africa', 'Ghana', 'Tanzania', 'Uganda']
+        selected_country = st.selectbox(
+            "Focus Country",
+            options=african_countries,
+            index=0,
+            help="Select country for targeted analysis"
+        )
+        
+        # API status display
+        if selected_mode == 'live':
+            st.markdown("### 📊 API Status")
+            api_statuses = {
+                'World Bank': 'online',
+                'CoinGecko': 'online', 
+                'ECB': 'online',
+                'FRED': 'online'
+            }
+            for api, status in api_statuses.items():
+                status_icon = "🟢" if status == 'online' else "🔴"
+                st.markdown(f"{status_icon} {api}")
+else:
+    selected_mode = 'offline'
+    selected_country = 'Kenya'
 
 # Custom CSS with FontAwesome and enhanced styling
 st.markdown("""

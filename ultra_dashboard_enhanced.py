@@ -39,12 +39,27 @@ warnings.filterwarnings('ignore')
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
+# Import EconoNet unified API system
+try:
+    from econonet import (
+        get_worldbank, get_coingecko, get_usgs, get_wiki_views,
+        get_all_data, set_mode, OperationMode, get_config, is_live_mode
+    )
+    from econonet.visual import (
+        create_sentiment_radar, create_provenance_footer,
+        create_real_vs_synthetic_overlay, create_risk_alert_card
+    )
+    ECONET_AVAILABLE = True
+except ImportError:
+    ECONET_AVAILABLE = False
+    st.warning("⚠️ EconoNet package not available. Using legacy API functions.")
+
 # ============================================================================
-# 🌍 REAL-WORLD API INTEGRATION FUNCTIONS (No Token Required)
+# 🌍 REAL-WORLD API INTEGRATION FUNCTIONS (Legacy Fallback)
 # ============================================================================
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
-def get_worldbank_gdp(country_code='KE', start_year=2010):
+def get_worldbank_gdp_legacy(country_code='KE', start_year=2010):
     """
     Fetch GDP data from World Bank Open Data API
     Args:
@@ -282,7 +297,89 @@ def generate_sample_economic_data():
 # Generate sample data
 sample_data = generate_sample_economic_data()['economic_indicators']
 
-# Ultra-advanced CSS
+# ============================================================================
+# 🎛️ ECONET MODE CONFIGURATION
+# ============================================================================
+
+# Configure Streamlit
+st.set_page_config(
+    page_title="EconoNet - Ultra-Advanced Platform",
+    page_icon="🌌",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Mode Selection in Sidebar
+if ECONET_AVAILABLE:
+    st.sidebar.markdown("## 🎛️ EconoNet Configuration")
+    
+    mode_options = {
+        "🔄 Offline (Demo)": OperationMode.OFFLINE,
+        "🌐 Live (APIs)": OperationMode.LIVE, 
+        "🚀 Expert (Advanced)": OperationMode.EXPERT
+    }
+    
+    selected_mode = st.sidebar.selectbox(
+        "Operation Mode",
+        options=list(mode_options.keys()),
+        index=1  # Default to Live mode
+    )
+    
+    # Set the mode
+    set_mode(mode_options[selected_mode])
+    current_mode = mode_options[selected_mode]
+    
+    # Country selector
+    st.sidebar.markdown("### 🌍 Region Settings")
+    
+    country_options = {
+        "🇰🇪 Kenya": "KE",
+        "🇳🇬 Nigeria": "NG", 
+        "🇿🇦 South Africa": "ZA",
+        "🇬🇭 Ghana": "GH",
+        "🇺🇬 Uganda": "UG",
+        "🇹🇿 Tanzania": "TZ"
+    }
+    
+    selected_country = st.sidebar.selectbox(
+        "Focus Country",
+        options=list(country_options.keys()),
+        index=0  # Default to Kenya
+    )
+    
+    country_code = country_options[selected_country]
+    
+    # Update config
+    config = get_config()
+    config.default_country = country_code
+    
+    # Mode status indicator
+    if current_mode == OperationMode.OFFLINE:
+        st.sidebar.warning("🔄 **Offline Mode**: Using synthetic data")
+    elif current_mode == OperationMode.LIVE:
+        st.sidebar.success("🌐 **Live Mode**: Real API data with fallbacks")
+    else:
+        st.sidebar.info("🚀 **Expert Mode**: All features enabled")
+        
+    # API Status
+    if current_mode != OperationMode.OFFLINE:
+        st.sidebar.markdown("### 📡 API Status")
+        with st.sidebar.expander("View API Health"):
+            apis = ['worldbank', 'coingecko', 'usgs', 'wikipedia']
+            for api in apis:
+                if config.is_api_enabled(api):
+                    st.write(f"🟢 {api.title()}")
+                else:
+                    st.write(f"🔴 {api.title()}")
+else:
+    # Legacy mode selection
+    st.sidebar.markdown("## ⚡ Quantum Control Center")
+    country_code = "KE"
+    current_mode = "live"
+
+# ============================================================================
+# 🎨 ULTRA-ADVANCED CSS STYLING  
+# ============================================================================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;800&display=swap');
@@ -401,22 +498,44 @@ with tab1:
     with col_header1:
         if st.button("🌍 Sync World Bank Data"):
             with st.spinner("Quantum-syncing GDP data..."):
-                wb_data = get_worldbank_gdp()
-                if wb_data is not None:
-                    st.session_state.wb_gdp_data = wb_data
-                    st.success("✅ World Bank data synchronized!")
+                if ECONET_AVAILABLE:
+                    wb_data = get_worldbank(country_code, 'NY.GDP.MKTP.CD')
+                    if wb_data is not None and not wb_data.empty:
+                        st.session_state.wb_gdp_data = wb_data
+                        if wb_data['metadata'].iloc[0].get('fallback', False):
+                            st.warning("⚠️ Using synthetic data (API unavailable)")
+                        else:
+                            st.success("✅ World Bank data synchronized!")
+                    else:
+                        st.warning("⚠️ API unavailable, using quantum simulation")
                 else:
-                    st.warning("⚠️ API unavailable, using quantum simulation")
+                    wb_data = get_worldbank_gdp_legacy(country_code)
+                    if wb_data is not None:
+                        st.session_state.wb_gdp_data = wb_data
+                        st.success("✅ World Bank data synchronized!")
+                    else:
+                        st.warning("⚠️ API unavailable, using quantum simulation")
     
     with col_header2:
         if st.button("🔥 Sync Crypto Volatility"):
             with st.spinner("Quantum-analyzing crypto volatility..."):
-                crypto_data = get_coingecko_crypto()
-                if crypto_data is not None:
-                    st.session_state.crypto_data = crypto_data
-                    st.success("✅ Crypto data synchronized!")
+                if ECONET_AVAILABLE:
+                    crypto_data = get_coingecko(['bitcoin', 'ethereum'])
+                    if crypto_data is not None and not crypto_data.empty:
+                        st.session_state.crypto_data = crypto_data
+                        if crypto_data['metadata'].iloc[0].get('fallback', False):
+                            st.warning("⚠️ Using synthetic data (API unavailable)")
+                        else:
+                            st.success("✅ Crypto data synchronized!")
+                    else:
+                        st.warning("⚠️ API unavailable, using quantum simulation")
                 else:
-                    st.warning("⚠️ API unavailable, using quantum simulation")
+                    crypto_data = get_coingecko_crypto()
+                    if crypto_data is not None:
+                        st.session_state.crypto_data = crypto_data
+                        st.success("✅ Crypto data synchronized!")
+                    else:
+                        st.warning("⚠️ API unavailable, using quantum simulation")
     
     with col_header3:
         if st.button("🚨 Sync Risk Events"):
@@ -746,8 +865,12 @@ with tab9:
                             time.sleep(min(execution_time, 3))  # Cap demo execution time
                             
                             # Get real data for notebook
-                            wb_data = get_worldbank_gdp()
-                            crypto_data = get_coingecko_crypto()
+                            if ECONET_AVAILABLE:
+                                wb_data = get_worldbank(['NY.GDP.MKTP.CD'], countries=[selected_country])
+                                crypto_data = get_coingecko(['bitcoin', 'ethereum'])
+                            else:
+                                wb_data = get_worldbank_gdp_legacy(selected_country.lower()[:2])
+                                crypto_data = get_coingecko_crypto()
                             
                             results = {
                                 'execution_time': execution_time,
@@ -849,10 +972,16 @@ with tab9:
         if st.button("🔄 Refresh All API Data"):
             with st.spinner("Refreshing all API endpoints..."):
                 # Refresh all APIs
-                wb_data = get_worldbank_gdp()
-                crypto_data = get_coingecko_crypto()
-                earthquake_data = get_usgs_earthquakes()
-                wiki_data = get_wikipedia_trends()
+                if ECONET_AVAILABLE:
+                    wb_data = get_worldbank(['NY.GDP.MKTP.CD'], countries=[selected_country])
+                    crypto_data = get_coingecko(['bitcoin', 'ethereum'])
+                    earthquake_data = get_usgs(['earthquake'])  # Using unified get_usgs
+                    wiki_data = get_wiki_views(['Kenya', 'Nigeria'])
+                else:
+                    wb_data = get_worldbank_gdp_legacy(selected_country.lower()[:2])
+                    crypto_data = get_coingecko_crypto()
+                    earthquake_data = get_usgs_earthquakes()
+                    wiki_data = get_wikipedia_trends()
                 
                 if wb_data is not None:
                     st.session_state.wb_gdp_data = wb_data

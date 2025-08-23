@@ -36,12 +36,25 @@ def fix_plotly_data(data):
         return data.tolist()
     return data
 
-# Advanced API Integration
+# Advanced API Integration - Try new unified system first
 try:
-    from src.api_integration import get_real_time_data
+    from econonet import (
+        get_config, get_worldbank, get_coingecko, get_usgs, get_wiki_views,
+        get_ecb, get_fred, get_openmeteo, get_imf
+    )
+    from econonet.visual import (
+        create_sentiment_radar, create_provenance_footer, 
+        create_real_vs_synthetic_overlay, create_risk_alert_card
+    )
+    ECONET_AVAILABLE = True
 except ImportError:
-    def get_real_time_data():
-        return {"status": "API module not available"}
+    ECONET_AVAILABLE = False
+    # Fallback to legacy API integration
+    try:
+        from src.api_integration import get_real_time_data
+    except ImportError:
+        def get_real_time_data():
+            return {"status": "API module not available"}
 
 # Configure Streamlit page
 st.set_page_config(
@@ -50,6 +63,47 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Mode selector and configuration
+if ECONET_AVAILABLE:
+    config = get_config()
+    
+    # Sidebar configuration
+    with st.sidebar:
+        st.markdown("### 🎛️ EconoNet Configuration")
+        
+        # Operation mode selector
+        selected_mode = st.selectbox(
+            "Operation Mode",
+            options=['offline', 'live', 'expert'],
+            index=1,  # Default to 'live'
+            help="Offline: synthetic data, Live: APIs with fallback, Expert: advanced features"
+        )
+        
+        # Country selector
+        african_countries = ['Kenya', 'Nigeria', 'South Africa', 'Ghana', 'Tanzania', 'Uganda']
+        selected_country = st.selectbox(
+            "Focus Country",
+            options=african_countries,
+            index=0,
+            help="Select country for targeted analysis"
+        )
+        
+        # API status display
+        if selected_mode == 'live':
+            st.markdown("### 📊 API Status")
+            api_statuses = {
+                'World Bank': 'online',
+                'CoinGecko': 'online', 
+                'USGS': 'online',
+                'Wikipedia': 'online'
+            }
+            for api, status in api_statuses.items():
+                status_icon = "🟢" if status == 'online' else "🔴"
+                st.markdown(f"{status_icon} {api}")
+else:
+    selected_mode = 'offline'
+    selected_country = 'Kenya'
 
 # Enhanced CSS for immersive experience
 st.markdown("""

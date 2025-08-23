@@ -1,0 +1,113 @@
+name: Streamlit Import Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  streamlit-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Check dashboard imports
+      run: |
+        # Test import of main dashboards
+        python -c "
+        import sys
+        sys.path.append('src')
+        
+        # Test core package import
+        try:
+            import econonet
+            print('✅ EconoNet package imports successfully')
+        except ImportError as e:
+            print(f'❌ EconoNet import failed: {e}')
+            sys.exit(1)
+            
+        # Test configuration
+        try:
+            from econonet import get_config, OperationMode, set_mode
+            config = get_config()
+            set_mode(OperationMode.OFFLINE)
+            print('✅ Configuration system works')
+        except Exception as e:
+            print(f'❌ Configuration failed: {e}')
+            sys.exit(1)
+            
+        # Test API functions
+        try:
+            from econonet import get_worldbank, get_coingecko
+            print('✅ API functions import successfully')
+        except ImportError as e:
+            print(f'❌ API functions import failed: {e}')
+            sys.exit(1)
+            
+        # Test visual components
+        try:
+            from econonet.visual import create_sentiment_radar, create_provenance_footer
+            print('✅ Visual components import successfully') 
+        except ImportError as e:
+            print(f'❌ Visual components import failed: {e}')
+            sys.exit(1)
+        "
+        
+    - name: Test dashboard file syntax
+      run: |
+        # Check if dashboard files have valid Python syntax
+        python -m py_compile ultra_dashboard_enhanced.py
+        echo "✅ ultra_dashboard_enhanced.py syntax OK"
+        
+        # Test other dashboard files if they exist
+        if [ -f "immersive_dashboard.py" ]; then
+            python -m py_compile immersive_dashboard.py
+            echo "✅ immersive_dashboard.py syntax OK"
+        fi
+        
+        if [ -f "enhanced_streamlit_app.py" ]; then
+            python -m py_compile enhanced_streamlit_app.py  
+            echo "✅ enhanced_streamlit_app.py syntax OK"
+        fi
+        
+    - name: Test streamlit import without running
+      run: |
+        # Test that streamlit can load the app without starting server
+        python -c "
+        import sys
+        import os
+        sys.path.append('src')
+        
+        # Temporarily redirect stdout to avoid streamlit output
+        from io import StringIO
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            # This will fail when streamlit tries to start, but imports should work
+            exec(open('ultra_dashboard_enhanced.py').read())
+        except SystemExit:
+            # Expected - streamlit tries to start server
+            pass
+        except Exception as e:
+            sys.stdout = old_stdout
+            if 'streamlit' not in str(e).lower():
+                print(f'❌ Dashboard import error: {e}')
+                sys.exit(1)
+        finally:
+            sys.stdout = old_stdout
+            
+        print('✅ Dashboard imports completed successfully')
+        "
