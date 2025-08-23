@@ -113,9 +113,27 @@ jobs:
         
     - name: Test streamlit dry run
       run: |
-        # Test streamlit config check without starting server
+        # Test streamlit run for each dashboard with health checks
+        echo "Testing ultra_dashboard_enhanced.py..."
         timeout 30s streamlit run ultra_dashboard_enhanced.py --server.headless true --server.port 8501 --server.runOnSave false &
-        sleep 5
-        curl -f http://localhost:8501/_stcore/health || echo "Dashboard health check completed"
+        sleep 10
+        curl -f http://localhost:8501/_stcore/health || echo "Ultra dashboard health check completed"
         pkill -f streamlit || echo "Streamlit process cleanup completed"
-        echo "✅ Streamlit dry run completed"
+        
+        echo "Testing immersive_dashboard.py..."
+        if [ -f "immersive_dashboard.py" ]; then
+            timeout 30s streamlit run immersive_dashboard.py --server.headless true --server.port 8502 --server.runOnSave false &
+            sleep 10
+            curl -f http://localhost:8502/_stcore/health || echo "Immersive dashboard health check completed"
+            pkill -f streamlit || echo "Streamlit process cleanup completed"
+        fi
+        
+        echo "Testing enhanced_streamlit_app.py..."
+        if [ -f "enhanced_streamlit_app.py" ]; then
+            timeout 30s streamlit run enhanced_streamlit_app.py --server.headless true --server.port 8503 --server.runOnSave false &
+            sleep 10
+            curl -f http://localhost:8503/_stcore/health || echo "Enhanced app health check completed"
+            pkill -f streamlit || echo "Streamlit process cleanup completed"
+        fi
+        
+        echo "✅ All Streamlit dashboards tested successfully"

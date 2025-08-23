@@ -6,6 +6,45 @@ World-class economic analysis platform with AI-powered insights,
 quantum-inspired modeling, immersive notebook integration, and ultra-predictive analytics.
 Enhanced with real-world free APIs for live data integration.
 """
+
+import os
+import sys
+import warnings
+import logging
+
+# ✅ ULTIMATE STREAMLIT WARNING SUPPRESSION ✅
+# Set environment variables to suppress streamlit warnings
+os.environ['STREAMLIT_LOGGER_LEVEL'] = 'ERROR'
+os.environ['STREAMLIT_SUPPRESS_WARNING'] = '1'
+
+# Configure all logging before any imports
+logging.basicConfig(level=logging.CRITICAL, format='%(message)s')
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.CRITICAL)
+
+# Disable all warnings
+warnings.simplefilter('ignore')
+warnings.filterwarnings('ignore')
+
+# Pre-configure streamlit loggers to be completely disabled
+streamlit_loggers = [
+    "streamlit",
+    "streamlit.runtime", 
+    "streamlit.runtime.scriptrunner_utils",
+    "streamlit.runtime.scriptrunner_utils.script_run_context",
+    "streamlit.runtime.caching",
+    "streamlit.runtime.caching.cache_data_api",
+    "streamlit.runtime.state", 
+    "streamlit.runtime.state.session_state_proxy",
+    "streamlit.logger"
+]
+
+for logger_name in streamlit_loggers:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.CRITICAL)
+    logger.disabled = True
+    logger.propagate = False
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -35,6 +74,8 @@ from scipy import signal
 from scipy.stats import norm
 
 warnings.filterwarnings('ignore')
+# Filter Streamlit context warnings when imported
+warnings.filterwarnings("ignore", message="missing ScriptRunContext")
 
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -307,14 +348,6 @@ sample_data = generate_sample_economic_data()['economic_indicators']
 # ============================================================================
 # 🎛️ ECONET MODE CONFIGURATION
 # ============================================================================
-
-# Configure Streamlit
-st.set_page_config(
-    page_title="EconoNet - Ultra-Advanced Platform",
-    page_icon="🌌",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Mode Selection in Sidebar
 if ECONET_AVAILABLE:

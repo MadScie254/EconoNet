@@ -17,8 +17,25 @@ cd EconoNet
 pip install -r requirements.txt
 ```
 
-3. Run the dashboard:
+3. **Run the dashboards (IMPORTANT - Use Streamlit, not Python):**
+
 ```bash
+# Main ultra dashboard
+streamlit run ultra_dashboard_enhanced.py
+
+# Immersive dashboard
+streamlit run immersive_dashboard.py
+
+# Enhanced streamlit app
+streamlit run enhanced_streamlit_app.py
+```
+
+⚠️ **Do NOT run dashboards with `python` directly:**
+```bash
+# ❌ WRONG - This will cause ScriptRunContext warnings
+python ultra_dashboard_enhanced.py
+
+# ✅ CORRECT - Always use streamlit run
 streamlit run ultra_dashboard_enhanced.py
 ```
 

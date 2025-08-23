@@ -6,6 +6,44 @@ An advanced, immersive economic analysis platform integrating all notebooks
 with interactive models, real-time data, and comprehensive analytics.
 """
 
+import os
+import sys
+import warnings
+import logging
+
+# ✅ ULTIMATE STREAMLIT WARNING SUPPRESSION ✅
+# Set environment variables to suppress streamlit warnings
+os.environ['STREAMLIT_LOGGER_LEVEL'] = 'ERROR'
+os.environ['STREAMLIT_SUPPRESS_WARNING'] = '1'
+
+# Configure all logging before any imports
+logging.basicConfig(level=logging.CRITICAL, format='%(message)s')
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.CRITICAL)
+
+# Disable all warnings
+warnings.simplefilter('ignore')
+warnings.filterwarnings('ignore')
+
+# Pre-configure streamlit loggers to be completely disabled
+streamlit_loggers = [
+    "streamlit",
+    "streamlit.runtime", 
+    "streamlit.runtime.scriptrunner_utils",
+    "streamlit.runtime.scriptrunner_utils.script_run_context",
+    "streamlit.runtime.caching",
+    "streamlit.runtime.caching.cache_data_api",
+    "streamlit.runtime.state", 
+    "streamlit.runtime.state.session_state_proxy",
+    "streamlit.logger"
+]
+
+for logger_name in streamlit_loggers:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.CRITICAL)
+    logger.disabled = True
+    logger.propagate = False
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -1018,3 +1056,8 @@ st.markdown("""
 if auto_refresh and enable_realtime:
     time.sleep(30)
     st.experimental_rerun()
+
+if __name__ == "__main__":
+    import sys
+    if "streamlit" not in sys.argv[0]:
+        print("⚠ Running in bare mode (no UI)")

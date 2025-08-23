@@ -8,6 +8,8 @@ Tests for dashboard imports, fallback behaviors, and UI components.
 import pytest
 import sys
 import os
+import subprocess
+import importlib.util
 from unittest.mock import patch, MagicMock
 
 # Add src to path
@@ -47,6 +49,80 @@ class TestDashboardImports:
         assert callable(get_coingecko)
         assert callable(get_usgs)
         assert callable(validate_data_schema)
+    
+    def test_dashboard_bare_import(self):
+        """Test that dashboards can be imported without starting Streamlit UI"""
+        
+        dashboard_files = [
+            'ultra_dashboard_enhanced.py',
+            'immersive_dashboard.py', 
+            'enhanced_streamlit_app.py'
+        ]
+        
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        
+        for dashboard_file in dashboard_files:
+            dashboard_path = os.path.join(project_root, dashboard_file)
+            if os.path.exists(dashboard_path):
+                # Test import without execution (bare mode)
+                spec = importlib.util.spec_from_file_location("dashboard_module", dashboard_path)
+                dashboard_module = importlib.util.module_from_spec(spec)
+                
+                # This should not raise ScriptRunContext warnings due to our filters
+                try:
+                    spec.loader.exec_module(dashboard_module)
+                    print(f"✅ {dashboard_file} imported successfully in bare mode")
+                except Exception as e:
+                    # Should not fail on import
+                    pytest.fail(f"Dashboard {dashboard_file} failed to import: {e}")
+            else:
+                print(f"⚠️ {dashboard_file} not found, skipping test")
+    
+    def test_streamlit_subprocess_run(self):
+        """Test running dashboards via subprocess with streamlit run"""
+        dashboard_files = [
+            'ultra_dashboard_enhanced.py',
+            'enhanced_streamlit_app.py'
+        ]
+        
+        project_root = os.path.dirname(os.path.dirname(__file__))
+        
+        for dashboard_file in dashboard_files:
+            dashboard_path = os.path.join(project_root, dashboard_file)
+            if os.path.exists(dashboard_path):
+                # Test that streamlit run doesn't immediately crash
+                cmd = [
+                    'streamlit', 'run', dashboard_path,
+                    '--server.headless', 'true',
+                    '--server.port', '8901',  # Use different port for testing
+                    '--server.runOnSave', 'false'
+                ]
+                
+                try:
+                    # Run for a few seconds then terminate
+                    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    
+                    # Wait briefly then terminate
+                    import time
+                    time.sleep(3)
+                    process.terminate()
+                    
+                    stdout, stderr = process.communicate(timeout=5)
+                    
+                    # Check that it didn't immediately crash with import errors
+                    stderr_str = stderr.decode('utf-8').lower()
+                    if 'importerror' in stderr_str or 'modulenotfounderror' in stderr_str:
+                        pytest.fail(f"Dashboard {dashboard_file} has import errors: {stderr_str}")
+                    
+                    print(f"✅ {dashboard_file} runs with streamlit without import errors")
+                    
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    print(f"✅ {dashboard_file} ran successfully (timeout expected)")
+                except FileNotFoundError:
+                    print(f"⚠️ Streamlit not available for testing {dashboard_file}")
+            else:
+                print(f"⚠️ {dashboard_file} not found, skipping subprocess test")
     
     def test_visual_components_import(self):
         """Test visual components import"""
