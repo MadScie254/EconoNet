@@ -8,18 +8,33 @@ Returns standardized DataFrames with sentiment analysis and fallback support.
 import pandas as pd
 import numpy as np
 import requests
-import feedparser
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Any
 import json
 import time
-from dataclasses import dataclass
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 import logging
 import re
-from textblob import TextBlob
 import warnings
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Any
+from dataclasses import dataclass
+from urllib3.util.retry import Retry
+
+# Optional imports with fallbacks
+try:
+    import feedparser
+    FEEDPARSER_AVAILABLE = True
+except ImportError:
+    FEEDPARSER_AVAILABLE = False
+
+try:
+    from textblob import TextBlob
+    TEXTBLOB_AVAILABLE = True
+except ImportError:
+    TEXTBLOB_AVAILABLE = False
+
+try:
+    from requests.adapters import HTTPAdapter
+except ImportError:
+    HTTPAdapter = None
 
 warnings.filterwarnings('ignore')
 
@@ -44,24 +59,47 @@ news_config = NewsConfig()
 def get_session() -> requests.Session:
     """Create a requests session with retry strategy"""
     session = requests.Session()
-    retry_strategy = Retry(
-        total=news_config.max_retries,
-        status_forcelist=[429, 500, 502, 503, 504],
-        method_whitelist=["HEAD", "GET", "OPTIONS"],
-        backoff_factor=1
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
+    
+    if HTTPAdapter is not None:
+        try:
+            retry_strategy = Retry(
+                total=news_config.max_retries,
+                status_forcelist=[429, 500, 502, 503, 504],
+                method_whitelist=["HEAD", "GET", "OPTIONS"],
+                backoff_factor=1
+            )
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            session.mount("http://", adapter)
+            session.mount("https://", adapter)
+        except Exception as e:
+            logger.warning(f"Could not configure retry adapter: {e}")
+    
+    return session
     return session
 
 def analyze_sentiment(text: str) -> tuple:
     """
-    Analyze sentiment of text using TextBlob
+    Analyze sentiment of text using TextBlob (with fallback)
     Returns (sentiment_score, sentiment_label, emoji)
     """
     if not text or pd.isna(text):
         return 0.0, 'neutral', '⚪'
+    
+    if not TEXTBLOB_AVAILABLE:
+        # Simple rule-based fallback sentiment analysis
+        text_lower = str(text).lower()
+        positive_words = ['growth', 'up', 'rise', 'gain', 'positive', 'strong', 'bullish', 'high', 'good', 'success', 'profit']
+        negative_words = ['down', 'fall', 'drop', 'loss', 'negative', 'weak', 'bearish', 'low', 'bad', 'crash', 'decline']
+        
+        positive_count = sum(1 for word in positive_words if word in text_lower)
+        negative_count = sum(1 for word in negative_words if word in text_lower)
+        
+        if positive_count > negative_count:
+            return 0.5, 'bullish', '🟢'
+        elif negative_count > positive_count:
+            return -0.5, 'bearish', '🔴'
+        else:
+            return 0.0, 'neutral', '⚪'
     
     try:
         blob = TextBlob(str(text))
@@ -241,6 +279,10 @@ def get_yahoo_finance_feed(ticker: str = "BTC-USD") -> pd.DataFrame:
         response = session.get(url, timeout=news_config.timeout_seconds)
         response.raise_for_status()
         
+        if not FEEDPARSER_AVAILABLE:
+            logger.warning("feedparser not available, using fallback RSS parsing")
+            return generate_fallback_news()
+        
         feed = feedparser.parse(response.content)
         
         articles = []
@@ -306,6 +348,10 @@ def get_cryptopanic_feed(filter_type: str = "news") -> pd.DataFrame:
         session = get_session()
         response = session.get(url, timeout=news_config.timeout_seconds)
         response.raise_for_status()
+        
+        if not FEEDPARSER_AVAILABLE:
+            logger.warning("feedparser not available, using fallback RSS parsing")
+            return generate_fallback_news()
         
         feed = feedparser.parse(response.content)
         
@@ -376,6 +422,10 @@ def get_rss_feed(url: str, source_name: str = None) -> pd.DataFrame:
         session = get_session()
         response = session.get(url, timeout=news_config.timeout_seconds)
         response.raise_for_status()
+        
+        if not FEEDPARSER_AVAILABLE:
+            logger.warning("feedparser not available, using fallback RSS parsing")
+            return generate_fallback_news()
         
         feed = feedparser.parse(response.content)
         

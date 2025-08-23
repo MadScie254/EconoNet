@@ -39,7 +39,8 @@ except ImportError:
             search_news = live_news.search_news
             get_news_summary_stats = live_news.get_news_summary_stats
             NEWS_MODULE_AVAILABLE = True
-    except Exception:
+    except Exception as e:
+        print(f"Could not import news module: {e}")
         NEWS_MODULE_AVAILABLE = False
 
 @pytest.mark.skipif(not NEWS_MODULE_AVAILABLE, reason="News module not available")

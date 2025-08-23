@@ -1,4 +1,4 @@
-# Development dependencies for EconoNet
+# EconoNet Development Dependencies
 # Install with: pip install -r requirements-dev.txt
 
 # Testing
@@ -6,12 +6,15 @@ pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-mock>=3.11.0
 responses>=0.23.0
+pytest-asyncio>=0.21.0
+vcrpy>=5.1.0
 
 # Code formatting and linting
 black>=23.0.0
 ruff>=0.0.280
 mypy>=1.5.0
 pre-commit>=3.3.0
+isort>=5.12.0
 
 # Notebook support
 papermill>=2.4.0
@@ -31,3 +34,7 @@ pandas-stubs>=2.0.0
 # Development tools
 ipython>=8.12.0
 jupyter-lab>=4.0.0
+
+# CI/CD tools
+bandit>=1.7.5
+safety>=2.3.0

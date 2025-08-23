@@ -1,8 +1,11 @@
 # EconoNet: Unified Economic Intelligence Platform
 
-[![CI](https://github.com/your-username/EconoNet/workflows/CI/badge.svg)](https://github.com/your-username/EconoNet/actions)
-[![Tests](https://github.com/your-username/EconoNet/workflows/Test%20Suite/badge.svg)](https://github.com/your-username/EconoNet/actions)
+[![CI/CD Pipeline](https://github.com/MadScie254/EconoNet/workflows/EconoNet%20CI/CD%20Pipeline/badge.svg)](https://github.com/MadScie254/EconoNet/actions)
+[![Lint and Test](https://github.com/MadScie254/EconoNet/workflows/Lint%20and%20Test/badge.svg)](https://github.com/MadScie254/EconoNet/actions)
+[![Streamlit Check](https://github.com/MadScie254/EconoNet/workflows/Streamlit%20Import%20Check/badge.svg)](https://github.com/MadScie254/EconoNet/actions)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 EconoNet is a comprehensive economic analysis platform that unifies live data streams, predictive modeling, and interactive visualization. Built with a focus on African economies, it provides real-time insights through no-token APIs while maintaining robust fallback capabilities.
 
@@ -107,8 +110,56 @@ All API adapters return standardized DataFrames with schema:
 3. **Install the required packages:**
 
    ```bash
+   # Install production dependencies
    pip install -r requirements.txt
+   
+   # For development (includes testing and linting tools)
+   pip install -r requirements-dev.txt
+   
+   # Install optional dependencies for full functionality
+   pip install feedparser textblob nltk
+   
+   # Download NLTK data for sentiment analysis
+   python -c "import nltk; nltk.download('punkt'); nltk.download('vader_lexicon')"
    ```
+
+4. **Set up the package in development mode:**
+
+   ```bash
+   # Install the package in editable mode
+   pip install -e .
+   ```
+
+### Development Setup
+
+#### **Installing Development Dependencies**
+
+```bash
+# Install all development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+pytest tests/ -v
+
+# Run linting
+ruff check src/ tests/
+black --check src/ tests/
+mypy src/econonet
+
+# Format code
+black src/ tests/
+isort src/ tests/
+```
+
+#### **CI/CD Pipeline**
+
+The project includes comprehensive CI/CD workflows:
+
+- **Lint and Test**: Code quality checks, type checking, and test execution
+- **Streamlit Import Check**: Validates dashboard imports and syntax
+- **EconoNet CI/CD Pipeline**: Complete build, test, and deployment pipeline
+
+All workflows handle missing optional dependencies gracefully and provide meaningful feedback.
 
 ### Running Applications
 
@@ -147,6 +198,59 @@ export ECONET_CACHE_DIR="/path/to/cache"
 
 # Optional: Set custom timeout (seconds)
 export ECONET_API_TIMEOUT="30"
+```
+
+#### **Testing & Validation**
+
+```bash
+# Run the quick test suite
+python run_tests.py
+
+# Run comprehensive tests
+pytest tests/ -v --cov=src/econonet
+
+# Test specific functionality
+python -c "from econonet import get_config; print(get_config())"
+```
+
+#### **Troubleshooting Development Issues**
+
+**Package Import Issues:**
+```bash
+# Ensure development installation
+pip install -e .
+
+# Verify package structure
+python -c "import econonet; print(econonet.__file__)"
+```
+
+**Optional Dependencies:**
+- News features require: `feedparser`, `textblob`, `nltk`
+- All features work with graceful degradation if packages are missing
+- CI/CD handles optional dependencies automatically
+
+**CI/CD Debugging:**
+- Workflows use pip caching for faster builds
+- Optional dependencies are installed but failures don't break builds
+- Check workflow logs for specific error details
+
+### **🤝 Contributing**
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Install development dependencies**: `pip install -r requirements-dev.txt`
+4. **Make your changes** and add tests
+5. **Run the test suite**: `python run_tests.py`
+6. **Commit your changes**: `git commit -m 'Add amazing feature'`
+7. **Push to the branch**: `git push origin feature/amazing-feature`
+8. **Open a Pull Request**
+
+#### **Code Quality Standards**
+- Follow PEP 8 style guidelines
+- Add type hints where possible
+- Include docstrings for new functions
+- Write tests for new functionality
+- Ensure all CI/CD checks pass
 ```
 
 ## 📊 API Data Sources

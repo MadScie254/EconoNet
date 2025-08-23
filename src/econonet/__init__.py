@@ -45,10 +45,23 @@ try:
     from .visual import (
         create_sentiment_radar,
         create_provenance_footer,
-        create_real_vs_synthetic_overlay
+        create_real_vs_synthetic_overlay,
+        create_risk_alert_card
     )
 except ImportError:
     # Visual components not yet available
+    pass
+
+# News functionality
+try:
+    from .live_news import (
+        get_fintech_news,
+        get_news_summary_stats,
+        analyze_sentiment,
+        search_news
+    )
+except ImportError:
+    # News module not yet available
     pass
 
 __all__ = [
@@ -76,4 +89,16 @@ __all__ = [
     "get_imf",
     "get_all_data",
     "validate_data_schema",
+    
+    # News functions (if available)
+    "get_fintech_news",
+    "get_news_summary_stats", 
+    "analyze_sentiment",
+    "search_news",
+    
+    # Visual functions (if available)
+    "create_sentiment_radar",
+    "create_provenance_footer",
+    "create_real_vs_synthetic_overlay",
+    "create_risk_alert_card",
 ]
