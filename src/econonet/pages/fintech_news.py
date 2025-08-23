@@ -28,7 +28,7 @@ try:
         create_category_distribution, create_source_activity, 
         create_news_summary_metrics, display_news_metrics, inject_news_css
     )
-    from econonet.visual.provenance_footer import create_provenance_footer
+    from econonet.visual import create_provenance_footer
     NEWS_AVAILABLE = True
 except ImportError as e:
     st.error(f"News module import failed: {e}")

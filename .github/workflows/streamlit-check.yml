@@ -92,6 +92,13 @@ jobs:
             print('✅ News module imports successfully')
         except ImportError as e:
             print(f'⚠️ News module import warning (optional): {e}')
+            
+        # Test pages module (optional)
+        try:
+            from econonet.pages.fintech_news import main as fintech_news_main
+            print('✅ Fintech news page imports successfully')
+        except ImportError as e:
+            print(f'⚠️ Fintech news page import warning (optional): {e}')
         "
         
     - name: Test dashboard file syntax

@@ -1136,10 +1136,10 @@ with tab10:
     try:
         # Import the news page with proper path handling
         sys.path.append(os.path.join(os.path.dirname(__file__), 'src', 'econonet', 'pages'))
-        from fintech_news import run_fintech_news_page
+        from fintech_news import main as fintech_news_main
         
         # Run the complete news dashboard
-        run_fintech_news_page()
+        fintech_news_main()
         
     except ImportError as e:
         st.warning(f"📰 News module not found: {e}. Loading basic news interface...")
