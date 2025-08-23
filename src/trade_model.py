@@ -539,7 +539,8 @@ class DivineTradePredictor:
         
         # Add prediction point
         if 'Divine_Ensemble' in self.predictions:
-            next_date = self.trade_ts.index[-1] + pd.DateOffset(months=1)
+            last_date = pd.to_datetime(self.trade_ts.index[-1])
+            next_date = last_date + pd.DateOffset(months=1)
             fig.add_trace(
                 go.Scatter(
                     x=[next_date],

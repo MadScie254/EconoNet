@@ -292,8 +292,12 @@ def create_advanced_prediction_chart(data, target_column, predictions, model_nam
     
     # Future predictions
     if predictions:
+        # Get the last date and add 1 month using pandas DateOffset
+        last_date = pd.to_datetime(data['Date'].iloc[-1])
+        start_date = last_date + pd.DateOffset(months=1)
+        
         future_dates = pd.date_range(
-            start=data['Date'].iloc[-1] + pd.DateOffset(months=1),
+            start=start_date,
             periods=len(predictions),
             freq='MS'
         )
@@ -386,7 +390,7 @@ def create_model_comparison_chart(performance_metrics):
 
 def create_feature_importance_chart(feature_importance, model_name):
     """Create feature importance visualization"""
-    if not feature_importance:
+    if feature_importance is None or feature_importance.empty:
         return None
     
     # Take top 15 features

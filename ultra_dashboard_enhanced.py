@@ -597,36 +597,105 @@ with tab1:
         # Overlay real crypto data if available
         if 'crypto_data' in st.session_state:
             crypto_real = st.session_state.crypto_data
-            fig_crypto = go.Figure()
             
-            fig_crypto.add_trace(go.Scatter(
-                x=crypto_real['date'],
-                y=crypto_real['btc_volatility'],
-                mode='lines',
-                name='Real BTC Volatility',
-                line=dict(color='#f5576c', width=3)
-            ))
+            # Check if we have the unified schema
+            if 'series' in crypto_real.columns:
+                # Process unified schema data
+                fig_crypto = go.Figure()
+                
+                # Extract BTC data
+                btc_data = crypto_real[crypto_real['series'].str.contains('BITCOIN', na=False)]
+                if not btc_data.empty:
+                    # Extract volatility from metadata if available
+                    btc_volatility = []
+                    btc_dates = []
+                    for _, row in btc_data.iterrows():
+                        if isinstance(row['metadata'], dict) and 'volatility' in row['metadata']:
+                            vol = row['metadata']['volatility']
+                            if not pd.isna(vol):
+                                btc_volatility.append(vol)
+                                btc_dates.append(row['date'])
+                    
+                    if btc_volatility:
+                        fig_crypto.add_trace(go.Scatter(
+                            x=btc_dates,
+                            y=btc_volatility,
+                            mode='lines',
+                            name='Real BTC Volatility',
+                            line=dict(color='#f5576c', width=3)
+                        ))
+                
+                # Extract ETH data
+                eth_data = crypto_real[crypto_real['series'].str.contains('ETHEREUM', na=False)]
+                if not eth_data.empty:
+                    # Extract volatility from metadata if available
+                    eth_volatility = []
+                    eth_dates = []
+                    for _, row in eth_data.iterrows():
+                        if isinstance(row['metadata'], dict) and 'volatility' in row['metadata']:
+                            vol = row['metadata']['volatility']
+                            if not pd.isna(vol):
+                                eth_volatility.append(vol)
+                                eth_dates.append(row['date'])
+                    
+                    if eth_volatility:
+                        fig_crypto.add_trace(go.Scatter(
+                            x=eth_dates,
+                            y=eth_volatility,
+                            mode='lines',
+                            name='Real ETH Volatility',
+                            line=dict(color='#4facfe', width=2)
+                        ))
+                
+                fig_crypto.update_layout(
+                    title='🔥 Real Crypto Volatility Quantum Field',
+                    template='plotly_dark',
+                    font=dict(color='white')
+                )
+                st.plotly_chart(fig_crypto, use_container_width=True)
+                
+                # Volatility metrics
+                if btc_volatility:
+                    avg_btc_vol = np.mean(btc_volatility)
+                    st.metric("BTC Volatility", f"{avg_btc_vol:.2f}%")
+                if eth_volatility:
+                    avg_eth_vol = np.mean(eth_volatility)
+                    st.metric("ETH Volatility", f"{avg_eth_vol:.2f}%")
             
-            fig_crypto.add_trace(go.Scatter(
-                x=crypto_real['date'],
-                y=crypto_real['eth_volatility'],
-                mode='lines',
-                name='Real ETH Volatility',
-                line=dict(color='#4facfe', width=2)
-            ))
-            
-            fig_crypto.update_layout(
-                title='🔥 Real Crypto Volatility Quantum Field',
-                template='plotly_dark',
-                font=dict(color='white')
-            )
-            st.plotly_chart(fig_crypto, use_container_width=True)
-            
-            # Volatility metrics
-            avg_btc_vol = crypto_real['btc_volatility'].mean()
-            avg_eth_vol = crypto_real['eth_volatility'].mean()
-            st.metric("BTC Volatility", f"{avg_btc_vol:.2f}%")
-            st.metric("ETH Volatility", f"{avg_eth_vol:.2f}%")
+            # Legacy schema handling (if old data format)
+            elif 'btc_volatility' in crypto_real.columns:
+                fig_crypto = go.Figure()
+                
+                fig_crypto.add_trace(go.Scatter(
+                    x=crypto_real['date'],
+                    y=crypto_real['btc_volatility'],
+                    mode='lines',
+                    name='Real BTC Volatility',
+                    line=dict(color='#f5576c', width=3)
+                ))
+                
+                fig_crypto.add_trace(go.Scatter(
+                    x=crypto_real['date'],
+                    y=crypto_real['eth_volatility'],
+                    mode='lines',
+                    name='Real ETH Volatility',
+                    line=dict(color='#4facfe', width=2)
+                ))
+                
+                fig_crypto.update_layout(
+                    title='🔥 Real Crypto Volatility Quantum Field',
+                    template='plotly_dark',
+                    font=dict(color='white')
+                )
+                st.plotly_chart(fig_crypto, use_container_width=True)
+                
+                # Volatility metrics
+                avg_btc_vol = crypto_real['btc_volatility'].mean()
+                avg_eth_vol = crypto_real['eth_volatility'].mean()
+                st.metric("BTC Volatility", f"{avg_btc_vol:.2f}%")
+                st.metric("ETH Volatility", f"{avg_eth_vol:.2f}%")
+            else:
+                st.info("📊 Crypto data available but no volatility metrics found")
         else:
             # Pure quantum simulation
             quantum_volatility = np.random.exponential(2, 90)
@@ -791,8 +860,26 @@ with tab8:
                 latest_crypto = crypto_data.tail(1).iloc[0]
                 
                 st.markdown("#### 🔥 Crypto Sentiment Pulse")
-                btc_price = latest_crypto['btc_price']
-                btc_vol = latest_crypto['btc_volatility']
+                
+                # Handle both unified and legacy schemas
+                if 'btc_price' in crypto_data.columns:
+                    # Legacy schema
+                    btc_price = latest_crypto['btc_price']
+                    btc_vol = latest_crypto['btc_volatility']
+                else:
+                    # Unified schema - extract from first available BTC record
+                    btc_data = crypto_data[crypto_data['series'].str.contains('BITCOIN', na=False)]
+                    if not btc_data.empty:
+                        latest_btc = btc_data.tail(1).iloc[0]
+                        btc_price = latest_btc['value']
+                        # Try to get volatility from metadata
+                        if isinstance(latest_btc['metadata'], dict) and 'volatility' in latest_btc['metadata']:
+                            btc_vol = latest_btc['metadata']['volatility']
+                        else:
+                            btc_vol = 5.0  # Default fallback
+                    else:
+                        btc_price = 50000  # Default fallback
+                        btc_vol = 5.0
                 
                 st.metric("BTC Price", f"${btc_price:,.0f}")
                 st.metric("BTC Volatility", f"{btc_vol:.2f}%")

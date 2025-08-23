@@ -916,7 +916,8 @@ class DivineInflationPredictor:
         
         # Add prediction point
         if 'Ensemble_Weighted' in self.predictions:
-            next_date = inflation_ts.index[-1] + pd.DateOffset(months=1)
+            last_date = pd.to_datetime(inflation_ts.index[-1])
+            next_date = last_date + pd.DateOffset(months=1)
             fig.add_trace(
                 go.Scatter(
                     x=[next_date],

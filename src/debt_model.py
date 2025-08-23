@@ -1403,7 +1403,8 @@ def add_enhanced_dashboard_method(debt_predictor):
         
         # Add prediction point
         if 'Divine_Ensemble' in self.predictions:
-            next_date = self.debt_ts.index[-1] + pd.DateOffset(months=3)
+            last_date = pd.to_datetime(self.debt_ts.index[-1])
+            next_date = last_date + pd.DateOffset(months=3)
             fig.add_trace(
                 go.Scatter(
                     x=[next_date],

@@ -902,7 +902,8 @@ class DivineGDPPredictor:
         
         # Add prediction point
         if 'Ensemble_Weighted' in self.predictions:
-            next_date = gdp_ts.index[-1] + pd.DateOffset(years=1)
+            last_date = pd.to_datetime(gdp_ts.index[-1])
+            next_date = last_date + pd.DateOffset(years=1)
             fig.add_trace(
                 go.Scatter(
                     x=[next_date],
